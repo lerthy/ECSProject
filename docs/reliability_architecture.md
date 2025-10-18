@@ -3,77 +3,114 @@
 ```mermaid
 flowchart TD
     User[User]
-    CF[CloudFront]
-    ALB[Application Load Balancer]
-    ECS[ECS Cluster]
-    S3[S3 Bucket]
-    Athena[Athena]
-    CW[CloudWatch]
-    SNS[SNS Notifications]
-    XRay[X-Ray]
-    VPC[VPC]
-    WAF[WAF]
+    CF[CloudFront (Global Edge)]
+    Route53[Route53 DNS]
+    WAF1[WAF (us-east-1)]
+    WAF2[WAF (eu-west-1)]
+    ALB1[ALB (us-east-1, AZ-a/b)]
+    ALB2[ALB (eu-west-1, AZ-a/b)]
+    ECS1[ECS Cluster (us-east-1, AZ-a/b)]
+    ECS2[ECS Cluster (eu-west-1, AZ-a/b)]
+    S3_1[S3 (us-east-1, Multi-AZ, CRR)]
+    S3_2[S3 (eu-west-1, Multi-AZ, CRR)]
+    Athena1[Athena (us-east-1)]
+    Athena2[Athena (eu-west-1)]
+    CW1[CloudWatch (us-east-1)]
+    CW2[CloudWatch (eu-west-1)]
+    SNS1[SNS (us-east-1)]
+    SNS2[SNS (eu-west-1)]
+    XRay1[X-Ray (us-east-1)]
+    XRay2[X-Ray (eu-west-1)]
+    VPC1[VPC (us-east-1, AZ-a/b)]
+    VPC2[VPC (eu-west-1, AZ-a/b)]
 
     User --> CF
-    CF --> WAF
-    WAF --> ALB
-    ALB --> ECS
-    ECS --> S3
-    S3 --> Athena
-    ECS --> CW
-    CW --> SNS
-    ECS --> XRay
-    ALB --> VPC
-    ECS --> VPC
-    S3 --> VPC
-    Athena --> VPC
-    CF --> VPC
-    WAF --> VPC
+    CF --> Route53
+    Route53 --> WAF1
+    Route53 --> WAF2
+    WAF1 --> ALB1
+    WAF2 --> ALB2
+    ALB1 --> ECS1
+    ALB2 --> ECS2
+    ECS1 --> S3_1
+    ECS2 --> S3_2
+    S3_1 --> Athena1
+    S3_2 --> Athena2
+    ECS1 --> CW1
+    ECS2 --> CW2
+    CW1 --> SNS1
+    CW2 --> SNS2
+    ECS1 --> XRay1
+    ECS2 --> XRay2
+    ALB1 --> VPC1
+    ECS1 --> VPC1
+    S3_1 --> VPC1
+    Athena1 --> VPC1
+    ALB2 --> VPC2
+    ECS2 --> VPC2
+    S3_2 --> VPC2
+    Athena2 --> VPC2
+    CF --> VPC1
+    CF --> VPC2
+    WAF1 --> VPC1
+    WAF2 --> VPC2
+    S3_1 <--> S3_2
+    Athena1 <--> Athena2
+    CW1 <--> CW2
+    SNS1 <--> SNS2
+    XRay1 <--> XRay2
+    VPC1 <--> VPC2
 
-    subgraph Monitoring
-        CW
-        SNS
-        XRay
+    subgraph "Monitoring & Tracing"
+        CW1
+        CW2
+        SNS1
+        SNS2
+        XRay1
+        XRay2
     end
 
-    subgraph Data
-        S3
-        Athena
+    subgraph "Data Layer"
+        S3_1
+        S3_2
+        Athena1
+        Athena2
     end
 
-    subgraph Network
-        VPC
+    subgraph "Network & Security"
+        VPC1
+        VPC2
+        WAF1
+        WAF2
     end
 ```
+- **IAM:** Fine-grained permissions for cross-region access and failover operations.
+
+## Reliability Strategies
+
+- **Redundancy:** All critical services are deployed in multiple AZs and regions.
+- **Automated Failover:** Route53 and ALB health checks trigger failover to healthy endpoints.
+- **Backup & Restore:** S3 versioning and cross-region replication ensure data durability.
+- **Disaster Recovery:** Infrastructure as Code (Terraform) enables rapid redeployment in new regions.
+- **Monitoring & Alerting:** CloudWatch and SNS provide real-time visibility and alerting.
+- **Self-Healing:** ECS and ALB automatically replace unhealthy resources.
+
+## Example Region Mapping
+
+- **us-east-1:** Primary region for compute, data, and monitoring.
+- **eu-west-1:** Secondary region for disaster recovery and global users.
+- **CloudFront:** Uses both regions as origins, with failover.
+- **Route53:** Health checks endpoints in both regions, routes traffic accordingly.
+
+## Interactions
+
+- User requests → CloudFront (global edge) → WAF (security) → Route53 (DNS failover) → ALB (multi-AZ, multi-region) → ECS (multi-AZ tasks) → S3 (multi-AZ/region data) → Athena (multi-region queries)
+- Monitoring: ECS, ALB, S3, Athena → CloudWatch (metrics/logs) → SNS (alerts) → Operations team
+- Tracing: ECS, ALB → X-Ray (distributed tracing)
+- Security: All traffic and access controlled by VPC, WAF, IAM
 
 ---
 
-# Reliability Architecture Explanation
+# Summary
 
-This architecture is designed to maximize reliability for a cloud-native application using AWS services. Below is an explanation of each component and its role in reliability:
-
-## Components
-
-- **CloudFront (CF):** Distributes content globally, providing redundancy and failover for static and dynamic content.
-- **WAF:** Protects against common web exploits and attacks, ensuring application availability.
-- **Application Load Balancer (ALB):** Distributes incoming traffic across multiple ECS tasks, enabling high availability and automatic failover.
-- **ECS Cluster:** Runs containerized workloads, supports auto-scaling and self-healing for failed tasks.
-- **S3 Bucket:** Stores data reliably with built-in redundancy and versioning.
-- **Athena:** Provides serverless querying of S3 data, ensuring data accessibility even during compute failures.
-- **CloudWatch (CW):** Monitors application health, triggers alarms, and enables automated recovery actions.
-- **SNS Notifications:** Sends alerts for failures or critical events, enabling rapid response.
-- **X-Ray:** Traces requests and detects bottlenecks or failures in distributed systems.
-- **VPC:** Isolates resources, controls network traffic, and supports multi-AZ deployments for resilience.
-
-## Reliability Features
-
-- **Redundancy:** Multi-AZ deployments, load balancing, and distributed storage ensure no single point of failure.
-- **Monitoring & Alerting:** CloudWatch and SNS provide real-time monitoring and alerting for failures.
-- **Auto-healing:** ECS and ALB automatically replace unhealthy instances and reroute traffic.
-- **Security:** WAF and VPC protect against attacks and unauthorized access, reducing risk of downtime.
-- **Data Durability:** S3 and Athena ensure data is always available and recoverable.
-- **Tracing & Diagnostics:** X-Ray helps quickly identify and resolve reliability issues.
-
-## Summary
-
-This architecture leverages AWS managed services to provide a highly reliable, resilient, and self-healing environment for modern applications. Each component is chosen to minimize downtime, maximize availability, and ensure rapid recovery from failures.
+This architecture leverages AWS managed services, multi-region and multi-AZ deployments, automated failover, and robust monitoring to provide a highly reliable, resilient, and self-healing environment for modern applications. Each component is chosen to minimize downtime, maximize availability, and ensure rapid recovery from failures.

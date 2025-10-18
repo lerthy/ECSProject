@@ -1,62 +1,73 @@
 # Reliability Architecture (Mermaid Diagram)
 
 ```mermaid
-flowchart TD
-    CF[CloudFront]
-    WAF_CF[WAF]
-    S3[StaticSite_Logs]
-    CF --> WAF_CF
-    WAF_CF --> S3
-    S3 --> CF
+graph LR
+    %% ===== FRONTEND LAYER =====
+    subgraph FRONTEND["Frontend & Edge Layer"]
+        CF[CloudFront CDN]
+        WAF_CF[WAF (CloudFront Protection)]
+        S3[Static Website + Log Storage (S3)]
+        CF --> WAF_CF --> S3
+    end
 
-    R53[Route53]
-    R53_HC[HealthCheck]
-    R53 --> ALB_Primary
-    R53 --> ALB_Standby
-    R53_HC -.-> ALB_Primary
-    R53_HC -.-> ALB_Standby
+    %% ===== RELIABILITY LAYER =====
+    subgraph RELIABILITY["Reliability & Failover (Route 53 Warm Standby)"]
+        R53[Route 53 DNS Failover]
+        R53_HC[Health Checks]
+        R53_HC -.-> R53
+    end
 
-    ALB_Primary[ALB_Primary]
-    ECS_Primary[ECS_Primary]
-    ALB_Standby[ALB_Standby]
-    ECS_Standby[ECS_Standby]
-    WAF_ALB[WAF]
-    ALB_Primary --> ECS_Primary
-    ALB_Standby --> ECS_Standby
-    WAF_ALB --> ALB_Primary
-    WAF_ALB --> ALB_Standby
+    %% ===== BACKEND LAYER =====
+    subgraph BACKEND["Backend Services (ECS + ALB across AZs)"]
+        subgraph PRIMARY["Primary Region / AZ A"]
+            WAF_ALB_Primary[WAF (ALB Protection)]
+            ALB_Primary[ALB (Primary)]
+            ECS_Primary[ECS Service (Primary)]
+            WAF_ALB_Primary --> ALB_Primary --> ECS_Primary
+        end
 
-    CW[CloudWatch]
-    SNS[SNS_Alerts]
-    XR[XRay]
-    ATH[Athena]
-    CW --> SNS
-    CW --> ALB_Primary
-    CW --> ALB_Standby
-    CW --> ECS_Primary
-    CW --> ECS_Standby
-    XR --> ECS_Primary
-    XR --> ECS_Standby
-    ATH --> S3
+        subgraph STANDBY["Standby Region / AZ B"]
+            WAF_ALB_Standby[WAF (ALB Protection)]
+            ALB_Standby[ALB (Standby – Warm)]
+            ECS_Standby[ECS Service (Standby)]
+            WAF_ALB_Standby --> ALB_Standby --> ECS_Standby
+        end
 
-    CP[CodePipeline]
-    CB[CodeBuild]
-    CP --> CB
-    CB --> ECS_Primary
-    CB --> ECS_Standby
+        R53 --> ALB_Primary
+        R53 --> ALB_Standby
+        R53_HC -.-> ALB_Primary
+        R53_HC -.-> ALB_Standby
+    end
 
+    %% ===== OBSERVABILITY LAYER =====
+    subgraph OBS["Observability & Monitoring"]
+        CW[CloudWatch Metrics + Dashboards]
+        SNS[SNS Alerts]
+        XR[X-Ray Tracing]
+        ATH[Athena Log Analytics]
+        CW --> SNS
+        CW --> ALB_Primary
+        CW --> ALB_Standby
+        CW --> ECS_Primary
+        CW --> ECS_Standby
+        XR --> ECS_Primary
+        XR --> ECS_Standby
+        ATH --> S3
+    end
+
+    %% ===== CI/CD LAYER =====
+    subgraph CICD["Continuous Integration & Deployment"]
+        CP[CodePipeline]
+        CB[CodeBuild]
+        CP --> CB
+        CB --> ECS_Primary
+        CB --> ECS_Standby
+    end
+
+    %% ===== GLOBAL FLOW =====
     CF --> R53
-    R53 --> ALB_Primary
-    R53 --> ALB_Standby
     S3 --> ATH
-    ALB_Primary --> CW
-    ALB_Standby --> CW
-    ECS_Primary --> XR
-    ECS_Standby --> XR
     CW --> SNS
-
-    ALB_Primary -.-> ECS_Primary
-    ALB_Standby -.-> ECS_Standby
     R53 -.-> ALB_Standby
 ```
 - **IAM:** Fine-grained permissions for cross-region access and failover operations.

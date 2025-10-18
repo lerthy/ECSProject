@@ -2,65 +2,49 @@
 
 ```mermaid
 flowchart TD
-    %% Frontend Layer
-    subgraph Frontend [Frontend]
-        CF[CloudFront]
-        WAF_CF[WAF]
-        S3[Static Site & Logs]
-        CF -->|Delivers Content| WAF_CF
-        WAF_CF -->|Protects| S3
-        S3 -->|Hosts Static| CF
-    end
+    CF[CloudFront]
+    WAF_CF[WAF]
+    S3[StaticSite_Logs]
+    CF --> WAF_CF
+    WAF_CF --> S3
+    S3 --> CF
 
-    %% Reliability Layer
-    subgraph Reliability [Reliability & Routing]
-        R53[Route 53]
-        R53_HC[Health Check]
-        R53 -->|Failover Routing| ALB_Primary
-        R53 -->|Standby Routing| ALB_Standby
-        R53_HC -.->|Monitors| ALB_Primary
-        R53_HC -.->|Monitors| ALB_Standby
-    end
+    R53[Route53]
+    R53_HC[HealthCheck]
+    R53 --> ALB_Primary
+    R53 --> ALB_Standby
+    R53_HC -.-> ALB_Primary
+    R53_HC -.-> ALB_Standby
 
-    %% Backend Layer
-    subgraph Backend [Backend]
-        ALB_Primary[Primary ALB]
-        ECS_Primary[ECS Fargate (Primary)]
-        ALB_Standby[Standby ALB]
-        ECS_Standby[ECS Fargate (Standby)]
-        WAF_ALB[WAF]
-        ALB_Primary -->|Routes| ECS_Primary
-        ALB_Standby -->|Routes| ECS_Standby
-        WAF_ALB -->|Protects| ALB_Primary
-        WAF_ALB -->|Protects| ALB_Standby
-    end
+    ALB_Primary[ALB_Primary]
+    ECS_Primary[ECS_Primary]
+    ALB_Standby[ALB_Standby]
+    ECS_Standby[ECS_Standby]
+    WAF_ALB[WAF]
+    ALB_Primary --> ECS_Primary
+    ALB_Standby --> ECS_Standby
+    WAF_ALB --> ALB_Primary
+    WAF_ALB --> ALB_Standby
 
-    %% Observability Layer
-    subgraph Observability [Observability]
-        CW[CloudWatch]
-        SNS[SNS Alerts]
-        XR[X-Ray]
-        ATH[Athena]
-        CW -->|Alarms| SNS
-        CW -->|Metrics/Logs| ALB_Primary
-        CW -->|Metrics/Logs| ALB_Standby
-        CW -->|Metrics/Logs| ECS_Primary
-        CW -->|Metrics/Logs| ECS_Standby
-        XR -->|Tracing| ECS_Primary
-        XR -->|Tracing| ECS_Standby
-        ATH -->|Analyze Logs| S3
-    end
+    CW[CloudWatch]
+    SNS[SNS_Alerts]
+    XR[XRay]
+    ATH[Athena]
+    CW --> SNS
+    CW --> ALB_Primary
+    CW --> ALB_Standby
+    CW --> ECS_Primary
+    CW --> ECS_Standby
+    XR --> ECS_Primary
+    XR --> ECS_Standby
+    ATH --> S3
 
-    %% CI/CD Layer (Optional)
-    subgraph CICD [CI/CD]
-        CP[CodePipeline]
-        CB[CodeBuild]
-        CP --> CB
-        CB --> ECS_Primary
-        CB --> ECS_Standby
-    end
+    CP[CodePipeline]
+    CB[CodeBuild]
+    CP --> CB
+    CB --> ECS_Primary
+    CB --> ECS_Standby
 
-    %% Connections
     CF --> R53
     R53 --> ALB_Primary
     R53 --> ALB_Standby
@@ -71,10 +55,9 @@ flowchart TD
     ECS_Standby --> XR
     CW --> SNS
 
-    %% Standby/Failover Labels
-    ALB_Primary -.->|Primary Traffic| ECS_Primary
-    ALB_Standby -.->|Warm Standby| ECS_Standby
-    R53 -.->|Failover| ALB_Standby
+    ALB_Primary -.-> ECS_Primary
+    ALB_Standby -.-> ECS_Standby
+    R53 -.-> ALB_Standby
 ```
 - **IAM:** Fine-grained permissions for cross-region access and failover operations.
 

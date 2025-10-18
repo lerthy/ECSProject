@@ -88,9 +88,9 @@ This will create the S3 bucket (`observability-terraform-backend`) and DynamoDB 
 
 | Service                   | Can Terraform Create? | How to Create | Required Config |
 |-------------------------- |----------------------|--------------|----------------|
-| ACM Certificate           | No (for public certs) | AWS Console: ACM | DNS/email validation, domain name |
-| S3 Backend Bucket         | No (for state)        | Automated by `scripts/bootstrap_backend.sh` | Versioning enabled |
-| DynamoDB Table            | No (for state lock)   | Automated by `scripts/bootstrap_backend.sh` | Partition key: LockID |
+| ACM Certificate           | Automated request via `scripts/request_acm_certificate.sh` | Run script, then manually add DNS validation record | Domain name, DNS validation |
+| S3 Backend Bucket         | Automated by `scripts/bootstrap_backend.sh` | No manual setup | Versioning enabled |
+| DynamoDB Table            | Automated by `scripts/bootstrap_backend.sh` | No manual setup | Partition key: LockID |
 | ECS Cluster, Service, Task | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
 | ALB, Target Groups, Listeners | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
 | S3 Buckets (frontend, logs) | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
@@ -103,7 +103,7 @@ This will create the S3 bucket (`observability-terraform-backend`) and DynamoDB 
 | Route53 Health Checks, Records | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
 | IAM Roles for ECS, X-Ray, Config | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
 | ECR Repository            | Yes/No (if importing) | AWS Console: ECR | Name: backend |
-| Artifact Bucket           | Yes/No               | AWS Console: S3 | Name: ecom-observability-artifacts |
+| Artifact Bucket           | Automated by `scripts/bootstrap_artifact_bucket.sh` | No manual setup | Name: ecom-observability-artifacts |
 | IAM Service Roles         | Yes/No               | AWS Console: IAM | Trust policy, permissions |
 
 ---

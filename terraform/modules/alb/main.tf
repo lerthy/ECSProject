@@ -7,6 +7,12 @@ resource "aws_lb" "this" {
   subnets            = var.public_subnet_ids
   enable_deletion_protection = var.enable_deletion_protection
   tags               = var.tags
+
+  access_logs {
+    bucket  = var.access_logs_bucket
+    prefix  = "alb-logs/"
+    enabled = true
+  }
 }
 
 resource "aws_lb_target_group" "api" {

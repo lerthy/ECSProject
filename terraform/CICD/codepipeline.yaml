@@ -1,14 +1,33 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: CI/CD Pipeline for E-Commerce Platform
+Parameters:
+  PipelineRoleArn:
+    Type: String
+    Description: IAM role ARN for CodePipeline
+  ArtifactBucket:
+    Type: String
+    Description: S3 bucket for pipeline artifacts
+  SnsTopicArn:
+    Type: String
+    Description: SNS topic ARN for notifications
+  GitHubOwner:
+    Type: String
+    Description: GitHub repository owner
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository name
+  GitHubToken:
+    Type: String
+    Description: GitHub OAuth token
 Resources:
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       Name: ecommerce-cicd-pipeline
-      RoleArn: <REPLACE_WITH_PIPELINE_ROLE_ARN>
+      RoleArn: !Ref PipelineRoleArn
       ArtifactStore:
         Type: S3
-        Location: <REPLACE_WITH_PIPELINE_ARTIFACT_BUCKET>
+        Location: !Ref ArtifactBucket
       Stages:
         - Name: Source
           Actions:
@@ -21,10 +40,10 @@ Resources:
               OutputArtifacts:
                 - Name: SourceOutput
               Configuration:
-                Owner: <REPLACE_WITH_GITHUB_OWNER>
-                Repo: <REPLACE_WITH_GITHUB_REPO>
+                Owner: !Ref GitHubOwner
+                Repo: !Ref GitHubRepo
                 Branch: main
-                OAuthToken: <REPLACE_WITH_GITHUB_TOKEN>
+                OAuthToken: !Ref GitHubToken
         - Name: Build
           Actions:
             - Name: CodeBuildDocker
@@ -72,4 +91,4 @@ Resources:
                 Provider: SNS
                 Version: 1
               Configuration:
-                TopicArn: <REPLACE_WITH_SNS_TOPIC_ARN>
+                TopicArn: !Ref SnsTopicArn

@@ -39,6 +39,20 @@ module "alb" {
   certificate_arn          = var.acm_certificate_arn
 }
 
+# Standby ALB (Warm Standby)
+module "alb_standby" {
+  source                    = "./modules/alb"
+  name                      = "${var.alb_name}-standby"
+  security_group_ids        = [module.vpc.nat_gateway_id] # Replace with actual SGs
+  public_subnet_ids         = module.vpc.public_subnet_ids
+  enable_deletion_protection = true
+  tags                     = var.tags
+  vpc_id                   = module.vpc.vpc_id
+  target_port              = var.target_port
+  health_check_path        = var.health_check_path
+  certificate_arn          = var.acm_certificate_arn
+}
+
 module "ecs" {
   source                  = "./modules/ecs"
   name                    = var.ecs_name
@@ -50,6 +64,22 @@ module "ecs" {
   private_subnet_ids      = module.vpc.private_subnet_ids
   security_group_ids      = [module.vpc.nat_gateway_id] # Replace with actual SGs
   target_group_arn        = module.alb.target_group_arn
+  container_name          = var.container_name
+  container_port          = var.container_port
+}
+
+# Standby ECS Service (Warm Standby)
+module "ecs_standby" {
+  source                  = "./modules/ecs"
+  name                    = "${var.ecs_name}-standby"
+  tags                    = var.tags
+  cpu                     = var.cpu
+  memory                  = var.memory
+  container_definitions   = var.container_definitions
+  desired_count           = 1 # Minimal standby
+  private_subnet_ids      = module.vpc.private_subnet_ids
+  security_group_ids      = [module.vpc.nat_gateway_id] # Replace with actual SGs
+  target_group_arn        = module.alb_standby.target_group_arn
   container_name          = var.container_name
   container_port          = var.container_port
 }

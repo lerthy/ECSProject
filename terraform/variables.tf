@@ -1,3 +1,21 @@
+# CloudWatch dashboard and alarm variables
+variable "dashboard_body" {
+  description = "JSON body for CloudWatch dashboard"
+  type        = string
+  default     = "{}"
+}
+
+variable "ecs_cpu_threshold" {
+  description = "CPU threshold for ECS CloudWatch alarm"
+  type        = number
+  default     = 80
+}
+# App secret for Secrets Manager
+variable "app_secret_string" {
+  description = "Secret string for application (example)"
+  type        = string
+  default     = "REPLACE_ME"
+}
 variable "region" {
   description = "AWS region"
   type        = string
@@ -56,6 +74,22 @@ variable "target_port" {
 }
 variable "health_check_path" {
   description = "Health check path"
+  type        = string
+}
+
+# Route 53 and ALB DNS variables for failover
+variable "route53_zone_id" {
+  description = "Route 53 Hosted Zone ID for API DNS name"
+  type        = string
+}
+
+variable "api_dns_name" {
+  description = "DNS name for the API (e.g., api.example.com)"
+  type        = string
+}
+
+variable "alb_zone_id" {
+  description = "ALB DNS zone ID (from AWS documentation for your region)"
   type        = string
 }
 variable "acm_certificate_arn" {

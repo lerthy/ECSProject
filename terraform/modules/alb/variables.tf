@@ -46,3 +46,8 @@ variable "certificate_arn" {
   type        = string
   default     = ""
 }
+
+variable "access_logs_bucket" {
+  description = "S3 bucket for ALB access logs"
+  type        = string
+}

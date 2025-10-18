@@ -1,9 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = "<REPLACE_WITH_YOUR_BUCKET>"
-    key            = "terraform/state/${var.environment}/terraform.tfstate"
-    region         = "<REPLACE_WITH_REGION>"
-    dynamodb_table = "<REPLACE_WITH_DYNAMODB_TABLE>"
+  bucket         = "observability-terraform-backend" # S3 bucket for Terraform state
+  key            = "terraform/state/${var.environment}/terraform.tfstate" # State file path per environment
+  region         = "eu-central-1" # AWS region
+  dynamodb_table = "terraform-state-lock" # DynamoDB table for state locking
     encrypt        = true
   }
 }

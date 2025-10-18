@@ -53,3 +53,28 @@ variable "container_port" {
   description = "Port on the container to attach to the ALB"
   type        = number
 }
+
+# Autoscaling variables
+variable "min_capacity" {
+  description = "Minimum number of ECS tasks for autoscaling"
+  type        = number
+  default     = 1
+}
+
+variable "max_capacity" {
+  description = "Maximum number of ECS tasks for autoscaling"
+  type        = number
+  default     = 10
+}
+
+variable "cpu_autoscale_target" {
+  description = "Target CPU utilization for ECS autoscaling (percent)"
+  type        = number
+  default     = 60
+}
+
+variable "memory_autoscale_target" {
+  description = "Target memory utilization for ECS autoscaling (percent)"
+  type        = number
+  default     = 75
+}

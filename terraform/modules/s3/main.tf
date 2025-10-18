@@ -16,8 +16,10 @@ resource "aws_s3_bucket" "alb_logs" {
   tags = var.tags
 }
 
+
 resource "aws_s3_bucket" "cloudfront_logs" {
   bucket = var.cloudfront_logs_bucket_name
   force_destroy = true
   tags = var.tags
 }
+

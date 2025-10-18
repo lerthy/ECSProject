@@ -2,64 +2,79 @@
 
 ```mermaid
 flowchart TD
-    User[User]
-    CF[CloudFront_Global_Edge]
-    Route53[Route53_DNS]
-    WAF1[WAF_us_east_1]
-    WAF2[WAF_eu_west_1]
-    ALB1[ALB_us_east_1_AZ_a_b]
-    ALB2[ALB_eu_west_1_AZ_a_b]
-    ECS1[ECS_us_east_1_AZ_a_b]
-    ECS2[ECS_eu_west_1_AZ_a_b]
-    S3_1[S3_us_east_1_Multi_AZ_CRR]
-    S3_2[S3_eu_west_1_Multi_AZ_CRR]
-    Athena1[Athena_us_east_1]
-    Athena2[Athena_eu_west_1]
-    CW1[CloudWatch_us_east_1]
-    CW2[CloudWatch_eu_west_1]
-    SNS1[SNS_us_east_1]
-    SNS2[SNS_eu_west_1]
-    XRay1[XRay_us_east_1]
-    XRay2[XRay_eu_west_1]
-    VPC1[VPC_us_east_1_AZ_a_b]
-    VPC2[VPC_eu_west_1_AZ_a_b]
+    %% Frontend Layer
+    subgraph Frontend [Frontend]
+        CF[CloudFront]
+        WAF_CF[WAF]
+        S3[Static Site & Logs]
+        CF -->|Delivers Content| WAF_CF
+        WAF_CF -->|Protects| S3
+        S3 -->|Hosts Static| CF
+    end
 
-    User --> CF
-    CF --> Route53
-    Route53 --> WAF1
-    Route53 --> WAF2
-    WAF1 --> ALB1
-    WAF2 --> ALB2
-    ALB1 --> ECS1
-    ALB2 --> ECS2
-    ECS1 --> S3_1
-    ECS2 --> S3_2
-    S3_1 --> Athena1
-    S3_2 --> Athena2
-    ECS1 --> CW1
-    ECS2 --> CW2
-    CW1 --> SNS1
-    CW2 --> SNS2
-    ECS1 --> XRay1
-    ECS2 --> XRay2
-    ALB1 --> VPC1
-    ECS1 --> VPC1
-    S3_1 --> VPC1
-    Athena1 --> VPC1
-    ALB2 --> VPC2
-    ECS2 --> VPC2
-    S3_2 --> VPC2
-    Athena2 --> VPC2
-    CF --> VPC1
-    CF --> VPC2
-    WAF1 --> VPC1
-    WAF2 --> VPC2
-    S3_1 --- S3_2
-    Athena1 --- Athena2
-    CW1 --- CW2
-    SNS1 --- SNS2
-    XRay1 --- XRay2
-    VPC1 --- VPC2
+    %% Reliability Layer
+    subgraph Reliability [Reliability & Routing]
+        R53[Route 53]
+        R53_HC[Health Check]
+        R53 -->|Failover Routing| ALB_Primary
+        R53 -->|Standby Routing| ALB_Standby
+        R53_HC -.->|Monitors| ALB_Primary
+        R53_HC -.->|Monitors| ALB_Standby
+    end
+
+    %% Backend Layer
+    subgraph Backend [Backend]
+        ALB_Primary[Primary ALB]
+        ECS_Primary[ECS Fargate (Primary)]
+        ALB_Standby[Standby ALB]
+        ECS_Standby[ECS Fargate (Standby)]
+        WAF_ALB[WAF]
+        ALB_Primary -->|Routes| ECS_Primary
+        ALB_Standby -->|Routes| ECS_Standby
+        WAF_ALB -->|Protects| ALB_Primary
+        WAF_ALB -->|Protects| ALB_Standby
+    end
+
+    %% Observability Layer
+    subgraph Observability [Observability]
+        CW[CloudWatch]
+        SNS[SNS Alerts]
+        XR[X-Ray]
+        ATH[Athena]
+        CW -->|Alarms| SNS
+        CW -->|Metrics/Logs| ALB_Primary
+        CW -->|Metrics/Logs| ALB_Standby
+        CW -->|Metrics/Logs| ECS_Primary
+        CW -->|Metrics/Logs| ECS_Standby
+        XR -->|Tracing| ECS_Primary
+        XR -->|Tracing| ECS_Standby
+        ATH -->|Analyze Logs| S3
+    end
+
+    %% CI/CD Layer (Optional)
+    subgraph CICD [CI/CD]
+        CP[CodePipeline]
+        CB[CodeBuild]
+        CP --> CB
+        CB --> ECS_Primary
+        CB --> ECS_Standby
+    end
+
+    %% Connections
+    CF --> R53
+    R53 --> ALB_Primary
+    R53 --> ALB_Standby
+    S3 --> ATH
+    ALB_Primary --> CW
+    ALB_Standby --> CW
+    ECS_Primary --> XR
+    ECS_Standby --> XR
+    CW --> SNS
+
+    %% Standby/Failover Labels
+    ALB_Primary -.->|Primary Traffic| ECS_Primary
+    ALB_Standby -.->|Warm Standby| ECS_Standby
+    R53 -.->|Failover| ALB_Standby
 ```
 - **IAM:** Fine-grained permissions for cross-region access and failover operations.
 

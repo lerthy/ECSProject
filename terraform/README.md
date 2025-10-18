@@ -6,7 +6,7 @@ This repository contains production-grade, modular Terraform code to deploy an E
 - `modules/` — Reusable Terraform modules (vpc, ecs, alb, s3, cloudfront, cloudwatch, sns, xray, athena)
 - `environments/` — Environment-specific configurations (dev, staging, prod)
 - `backend/` — Remote backend configuration (S3 + DynamoDB)
-- `.github/workflows/` — CI/CD pipeline (GitHub Actions)
+`CICD/` — CI/CD pipeline (AWS CodePipeline, CodeBuild)
 
 ## Deployment Steps
 1. **Configure Remote Backend**

@@ -3,26 +3,26 @@
 ```mermaid
 flowchart TD
     User[User]
-    CF[CloudFront (Global Edge)]
-    Route53[Route53 DNS]
-    WAF1[WAF (us-east-1)]
-    WAF2[WAF (eu-west-1)]
-    ALB1[ALB (us-east-1, AZ-a/b)]
-    ALB2[ALB (eu-west-1, AZ-a/b)]
-    ECS1[ECS Cluster (us-east-1, AZ-a/b)]
-    ECS2[ECS Cluster (eu-west-1, AZ-a/b)]
-    S3_1[S3 (us-east-1, Multi-AZ, CRR)]
-    S3_2[S3 (eu-west-1, Multi-AZ, CRR)]
-    Athena1[Athena (us-east-1)]
-    Athena2[Athena (eu-west-1)]
-    CW1[CloudWatch (us-east-1)]
-    CW2[CloudWatch (eu-west-1)]
-    SNS1[SNS (us-east-1)]
-    SNS2[SNS (eu-west-1)]
-    XRay1[X-Ray (us-east-1)]
-    XRay2[X-Ray (eu-west-1)]
-    VPC1[VPC (us-east-1, AZ-a/b)]
-    VPC2[VPC (eu-west-1, AZ-a/b)]
+    CF[CloudFront_Global_Edge]
+    Route53[Route53_DNS]
+    WAF1[WAF_us_east_1]
+    WAF2[WAF_eu_west_1]
+    ALB1[ALB_us_east_1_AZ_a_b]
+    ALB2[ALB_eu_west_1_AZ_a_b]
+    ECS1[ECS_us_east_1_AZ_a_b]
+    ECS2[ECS_eu_west_1_AZ_a_b]
+    S3_1[S3_us_east_1_Multi_AZ_CRR]
+    S3_2[S3_eu_west_1_Multi_AZ_CRR]
+    Athena1[Athena_us_east_1]
+    Athena2[Athena_eu_west_1]
+    CW1[CloudWatch_us_east_1]
+    CW2[CloudWatch_eu_west_1]
+    SNS1[SNS_us_east_1]
+    SNS2[SNS_eu_west_1]
+    XRay1[XRay_us_east_1]
+    XRay2[XRay_eu_west_1]
+    VPC1[VPC_us_east_1_AZ_a_b]
+    VPC2[VPC_eu_west_1_AZ_a_b]
 
     User --> CF
     CF --> Route53
@@ -54,35 +54,12 @@ flowchart TD
     CF --> VPC2
     WAF1 --> VPC1
     WAF2 --> VPC2
-    S3_1 <--> S3_2
-    Athena1 <--> Athena2
-    CW1 <--> CW2
-    SNS1 <--> SNS2
-    XRay1 <--> XRay2
-    VPC1 <--> VPC2
-
-    subgraph "Monitoring & Tracing"
-        CW1
-        CW2
-        SNS1
-        SNS2
-        XRay1
-        XRay2
-    end
-
-    subgraph "Data Layer"
-        S3_1
-        S3_2
-        Athena1
-        Athena2
-    end
-
-    subgraph "Network & Security"
-        VPC1
-        VPC2
-        WAF1
-        WAF2
-    end
+    S3_1 --- S3_2
+    Athena1 --- Athena2
+    CW1 --- CW2
+    SNS1 --- SNS2
+    XRay1 --- XRay2
+    VPC1 --- VPC2
 ```
 - **IAM:** Fine-grained permissions for cross-region access and failover operations.
 

@@ -5,8 +5,7 @@ This repository contains production-grade, modular Terraform code to deploy an E
 ## Directory Structure
 - `modules/` — Reusable Terraform modules (vpc, ecs, alb, s3, cloudfront, cloudwatch, sns, xray, athena)
 - `environments/` — Environment-specific configurations (dev, staging, prod)
-- `backend/` — Remote backend configuration (S3 + DynamoDB)
-`CICD/` — CI/CD pipeline (AWS CodePipeline, CodeBuild)
+- `CICD/` — CI/CD pipeline (AWS CodePipeline, CodeBuild)
 
 ## Deployment Steps
 1. **Configure Remote Backend**
@@ -20,7 +19,7 @@ This repository contains production-grade, modular Terraform code to deploy an E
    - `terraform plan -var-file=environments/prod/terraform.tfvars`
    - `terraform apply -var-file=environments/prod/terraform.tfvars`
 5. **CI/CD Pipeline**
-   - The `.github/workflows/ci-cd.yml` workflow will validate, plan, apply, build/push Docker images, update ECS, and deploy frontend to S3 with CloudFront invalidation.
+   - The `CICD/codepipeline.yaml` and `buildspec-*.yml` files define the AWS CodePipeline and CodeBuild steps to validate, plan, apply, build/push Docker images, update ECS, and deploy the frontend to S3 with CloudFront invalidation.
 
 ## Outputs
 - ALB DNS name

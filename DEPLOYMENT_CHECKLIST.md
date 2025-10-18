@@ -8,15 +8,16 @@ This checklist covers all manually required values, ARNs, IDs, emails, tokens, a
 
 | Resource/Variable         | Where to Get/Create | Where to Put It | Example Value | Shared/Env-Specific |
 |-------------------------- |--------------------|-----------------|--------------|---------------------|
-| S3 Bucket Name            | AWS Console: S3 → Create bucket | `terraform/backend/backend.tf` (`bucket` param) | `ecom-observability-tfstate` | Shared |
-| DynamoDB Table Name       | AWS Console: DynamoDB → Create table | `terraform/backend/backend.tf` (`dynamodb_table` param) | `ecom-observability-lock` | Shared |
+| S3 Bucket Name            | Created by `scripts/bootstrap_backend.sh` | `terraform/backend/backend.tf` (`bucket` param) | `observability-terraform-backend` | Shared |
+| DynamoDB Table Name       | Created by `scripts/bootstrap_backend.sh` | `terraform/backend/backend.tf` (`dynamodb_table` param) | `terraform-state-lock` | Shared |
 | AWS Region                | AWS Console: Regions | `terraform/backend/backend.tf` (`region` param) | `us-east-1` | Shared |
 
-**Example resource creation:**
+**Automated resource creation:**
+Run the following script to create the backend resources:
 ```sh
-aws s3api create-bucket --bucket ecom-observability-tfstate --region us-east-1
-aws dynamodb create-table --table-name ecom-observability-lock --attribute-definitions AttributeName=LockID,AttributeType=S --key-schema AttributeName=LockID,KeyType=HASH --billing-mode PAY_PER_REQUEST
+scripts/bootstrap_backend.sh
 ```
+This will create the S3 bucket (`observability-terraform-backend`) and DynamoDB table (`terraform-state-lock`) in the specified region.
 
 ---
 
@@ -88,8 +89,19 @@ aws dynamodb create-table --table-name ecom-observability-lock --attribute-defin
 | Service                   | Can Terraform Create? | How to Create | Required Config |
 |-------------------------- |----------------------|--------------|----------------|
 | ACM Certificate           | No (for public certs) | AWS Console: ACM | DNS/email validation, domain name |
-| S3 Backend Bucket         | No (for state)        | AWS Console: S3 | Versioning enabled |
-| DynamoDB Table            | No (for state lock)   | AWS Console: DynamoDB | Partition key: LockID |
+| S3 Backend Bucket         | No (for state)        | Automated by `scripts/bootstrap_backend.sh` | Versioning enabled |
+| DynamoDB Table            | No (for state lock)   | Automated by `scripts/bootstrap_backend.sh` | Partition key: LockID |
+| ECS Cluster, Service, Task | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
+| ALB, Target Groups, Listeners | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
+| S3 Buckets (frontend, logs) | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
+| CloudFront Distribution   | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
+| CloudWatch Log Groups, Alarms | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
+| SNS Topic                 | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
+| X-Ray Group, IAM Role     | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
+| Athena Database, Workgroup | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
+| WAF Web ACLs              | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
+| Route53 Health Checks, Records | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
+| IAM Roles for ECS, X-Ray, Config | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
 | ECR Repository            | Yes/No (if importing) | AWS Console: ECR | Name: backend |
 | Artifact Bucket           | Yes/No               | AWS Console: S3 | Name: ecom-observability-artifacts |
 | IAM Service Roles         | Yes/No               | AWS Console: IAM | Trust policy, permissions |
@@ -126,10 +138,10 @@ aws route53 list-hosted-zones
 
 | Resource / Variable Name  | Where to Get It | Where to Put It | Example Value | Shared/Env-Specific |
 |-------------------------- |----------------|-----------------|--------------|---------------------|
-| S3 Backend Bucket Name    | S3 Console     | backend/backend.tf | ecom-observability-tfstate | Shared |
-| DynamoDB Table Name       | DynamoDB Console | backend/backend.tf | ecom-observability-lock | Shared |
+| S3 Backend Bucket Name    | Automated by `scripts/bootstrap_backend.sh` | backend/backend.tf | observability-terraform-backend | Shared |
+| DynamoDB Table Name       | Automated by `scripts/bootstrap_backend.sh` | backend/backend.tf | terraform-state-lock | Shared |
 | AWS Region                | AWS Console    | backend/backend.tf | us-east-1 | Shared |
-| ACM Certificate ARN       | ACM Console    | alb/cloudfront variables.tf | arn:aws:acm:us-east-1:... | Env-Specific |
+| ACM Certificate ARN       | Requested by `scripts/request_acm_certificate.sh` (manual DNS validation required) | alb/cloudfront variables.tf | arn:aws:acm:us-east-1:... | Env-Specific |
 | SNS Topic ARN             | SNS Console    | sns variables.tf | arn:aws:sns:us-east-1:... | Shared/Env-Specific |
 | IAM Role ARNs             | IAM Console    | codepipeline.yaml | arn:aws:iam::... | Shared/Env-Specific |
 | ECR Repository ARN        | ECR Console    | ecs variables.tf | arn:aws:ecr:us-east-1:... | Shared/Env-Specific |
@@ -137,7 +149,7 @@ aws route53 list-hosted-zones
 | Route53 Hosted Zone ID    | Route53 Console | route53 variables.tf | Z1234567890ABC | Env-Specific |
 | GitHub OAuth Token        | GitHub Settings | codepipeline.yaml | ghp_abc123... | Shared |
 | GitHub Repo Owner/Name    | GitHub         | codepipeline.yaml | lerthy/ECSProject | Shared |
-| Pipeline Artifact Bucket  | S3 Console     | codepipeline.yaml | ecom-observability-artifacts | Shared |
+| Pipeline Artifact Bucket  | Automated by `scripts/bootstrap_artifact_bucket.sh` | codepipeline.yaml | ecom-observability-artifacts | Shared |
 | Team Email(s)             | Team/Org Email | sns variables.tf | alerts@company.com | Env-Specific |
 | Slack Webhook URL         | Slack          | sns variables.tf | https://hooks.slack.com/... | Shared/Env-Specific |
 | Environment Name          | N/A            | terraform.tfvars | dev | Env-Specific |

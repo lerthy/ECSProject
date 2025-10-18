@@ -4,32 +4,32 @@
 graph LR
     %% ===== FRONTEND LAYER =====
     subgraph FRONTEND["Frontend & Edge Layer"]
-        CF[CloudFront CDN]
-        WAF_CF[WAF (CloudFront Protection)]
-        S3[Static Website + Log Storage (S3)]
+        CF["CloudFront CDN"]
+        WAF_CF["WAF - CloudFront Protection"]
+        S3["Static Website + Log Storage (S3)"]
         CF --> WAF_CF --> S3
     end
 
     %% ===== RELIABILITY LAYER =====
-    subgraph RELIABILITY["Reliability & Failover (Route 53 Warm Standby)"]
-        R53[Route 53 DNS Failover]
-        R53_HC[Health Checks]
+    subgraph RELIABILITY["Reliability & Failover - Route53 Warm Standby"]
+        R53["Route 53 DNS Failover"]
+        R53_HC["Health Checks"]
         R53_HC -.-> R53
     end
 
     %% ===== BACKEND LAYER =====
-    subgraph BACKEND["Backend Services (ECS + ALB across AZs)"]
+    subgraph BACKEND["Backend Services - ECS + ALB across AZs"]
         subgraph PRIMARY["Primary Region / AZ A"]
-            WAF_ALB_Primary[WAF (ALB Protection)]
-            ALB_Primary[ALB (Primary)]
-            ECS_Primary[ECS Service (Primary)]
+            WAF_ALB_Primary["WAF - ALB Protection (Primary)"]
+            ALB_Primary["ALB - Primary"]
+            ECS_Primary["ECS Service - Primary"]
             WAF_ALB_Primary --> ALB_Primary --> ECS_Primary
         end
 
         subgraph STANDBY["Standby Region / AZ B"]
-            WAF_ALB_Standby[WAF (ALB Protection)]
-            ALB_Standby[ALB (Standby – Warm)]
-            ECS_Standby[ECS Service (Standby)]
+            WAF_ALB_Standby["WAF - ALB Protection (Standby)"]
+            ALB_Standby["ALB - Standby (Warm)"]
+            ECS_Standby["ECS Service - Standby"]
             WAF_ALB_Standby --> ALB_Standby --> ECS_Standby
         end
 
@@ -41,10 +41,10 @@ graph LR
 
     %% ===== OBSERVABILITY LAYER =====
     subgraph OBS["Observability & Monitoring"]
-        CW[CloudWatch Metrics + Dashboards]
-        SNS[SNS Alerts]
-        XR[X-Ray Tracing]
-        ATH[Athena Log Analytics]
+        CW["CloudWatch Metrics & Dashboards"]
+        SNS["SNS Alerts"]
+        XR["X-Ray Tracing"]
+        ATH["Athena Log Analytics"]
         CW --> SNS
         CW --> ALB_Primary
         CW --> ALB_Standby
@@ -57,8 +57,8 @@ graph LR
 
     %% ===== CI/CD LAYER =====
     subgraph CICD["Continuous Integration & Deployment"]
-        CP[CodePipeline]
-        CB[CodeBuild]
+        CP["CodePipeline"]
+        CB["CodeBuild"]
         CP --> CB
         CB --> ECS_Primary
         CB --> ECS_Standby

@@ -1,0 +1,16 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - echo Setting up Terraform backend...
+      - terraform init -backend-config="bucket=$TF_BACKEND_BUCKET" -backend-config="key=$TF_BACKEND_KEY" -backend-config="region=$AWS_DEFAULT_REGION" -backend-config="dynamodb_table=$TF_BACKEND_DDB"
+  build:
+    commands:
+      - echo Applying Terraform changes...
+      - terraform apply -auto-approve tfplan
+      - echo Updating ECS service with new image...
+      - aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
+      - echo Syncing frontend assets to S3...
+      - aws s3 sync ./frontend/dist s3://$FRONTEND_BUCKET --delete
+      - echo Invalidating CloudFront cache...
+      - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DIST_ID --paths "/*"

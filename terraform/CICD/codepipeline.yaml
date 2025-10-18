@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CI/CD Pipeline for E-Commerce Platform
+Resources:
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: ecommerce-cicd-pipeline
+      RoleArn: <REPLACE_WITH_PIPELINE_ROLE_ARN>
+      ArtifactStore:
+        Type: S3
+        Location: <REPLACE_WITH_PIPELINE_ARTIFACT_BUCKET>
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHubSource
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                Owner: <REPLACE_WITH_GITHUB_OWNER>
+                Repo: <REPLACE_WITH_GITHUB_REPO>
+                Branch: main
+                OAuthToken: <REPLACE_WITH_GITHUB_TOKEN>
+        - Name: Build
+          Actions:
+            - Name: CodeBuildDocker
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+              Configuration:
+                ProjectName: ecommerce-docker-build
+            - Name: CodeBuildTerraform
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: TerraformOutput
+              Configuration:
+                ProjectName: ecommerce-terraform-build
+        - Name: Deploy
+          Actions:
+            - Name: CodeBuildDeploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              InputArtifacts:
+                - Name: TerraformOutput
+              Configuration:
+                ProjectName: ecommerce-deploy
+        - Name: Notify
+          Actions:
+            - Name: SNSNotify
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: SNS
+                Version: 1
+              Configuration:
+                TopicArn: <REPLACE_WITH_SNS_TOPIC_ARN>

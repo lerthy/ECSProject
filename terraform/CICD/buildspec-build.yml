@@ -1,0 +1,26 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO
+      - echo Running lint and unit tests...
+      - npm ci
+      - npm run lint
+      - npm test
+      - echo Validating Terraform...
+      - terraform fmt -check
+      - terraform validate
+      - terraform plan -out=tfplan
+  build:
+    commands:
+      - echo Building Docker image...
+      - docker build -t $ECR_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION .
+      - docker push $ECR_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION
+artifacts:
+  files:
+    - tfplan
+    - '**/coverage*'
+    - '**/test-results*'
+    - '**/Dockerfile'
+    - '**/build/**'

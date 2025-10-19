@@ -31,7 +31,7 @@ This document explains how each of the five AWS Well-Architected Framework pilla
 - **What was implemented:**
   - AWS WAF for CloudFront and ALB (managed rules)
   - IAM least-privilege roles for ECS, Config, etc.
-  - Encryption at rest (S3, EBS) and in transit (HTTPS)
+  - Encryption at rest (S3, EBS) and in transit (HTTPS via CloudFront default certificate)
   - CloudTrail for auditing, AWS Config for compliance
   - Secrets stored in AWS Secrets Manager
 - **AWS Services:** WAF, IAM, S3, EBS, CloudTrail, Config, Secrets Manager

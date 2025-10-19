@@ -37,9 +37,9 @@ resource "aws_config_configuration_recorder" "main" {
 }
 
 resource "aws_iam_role" "config" {
-  name = "config-recorder-role"
+  name               = "config-recorder-role"
   assume_role_policy = data.aws_iam_policy_document.config_assume_role_policy.json
-  tags = var.tags
+  tags               = var.tags
 }
 
 data "aws_iam_policy_document" "config_assume_role_policy" {

@@ -5,9 +5,9 @@ resource "aws_ecs_cluster" "this" {
 }
 
 resource "aws_iam_role" "ecs_task_execution" {
-  name = "${var.name}-ecs-task-execution"
+  name               = "${var.name}-ecs-task-execution"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role_policy.json
-  tags = var.tags
+  tags               = var.tags
 }
 
 data "aws_iam_policy_document" "ecs_task_assume_role_policy" {

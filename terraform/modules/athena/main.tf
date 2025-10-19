@@ -11,7 +11,7 @@ resource "aws_athena_workgroup" "logs" {
       output_location = var.output_location
     }
   }
-  state = "ENABLED"
+  state         = "ENABLED"
   force_destroy = true
-  tags = var.tags
+  tags          = var.tags
 }

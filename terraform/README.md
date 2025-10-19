@@ -41,3 +41,5 @@ This repository contains production-grade, modular Terraform code to deploy an E
 ---
 
 For details, see each module's README.
+
+**Note:** HTTPS is provided by CloudFront using the default AWS certificate. No ACM certificate is required for this deployment. ALB is HTTP-only by default.

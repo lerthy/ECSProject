@@ -32,10 +32,6 @@ variable "origin_access_identity" {
   type        = string
 }
 
-variable "acm_certificate_arn" {
-  description = "ACM certificate ARN for HTTPS"
-  type        = string
-}
 
 variable "logs_bucket_domain_name" {
   description = "Domain name of the S3 bucket for logs"

@@ -21,9 +21,9 @@ resource "aws_route53_health_check" "alb_standby" {
 }
 
 resource "aws_route53_record" "api_failover_primary" {
-  zone_id = var.route53_zone_id
-  name    = var.api_dns_name
-  type    = "A"
+  zone_id        = var.route53_zone_id
+  name           = var.api_dns_name
+  type           = "A"
   set_identifier = "primary"
   alias {
     name                   = module.alb.alb_dns_name
@@ -37,9 +37,9 @@ resource "aws_route53_record" "api_failover_primary" {
 }
 
 resource "aws_route53_record" "api_failover_standby" {
-  zone_id = var.route53_zone_id
-  name    = var.api_dns_name
-  type    = "A"
+  zone_id        = var.route53_zone_id
+  name           = var.api_dns_name
+  type           = "A"
   set_identifier = "standby"
   alias {
     name                   = module.alb_standby.alb_dns_name

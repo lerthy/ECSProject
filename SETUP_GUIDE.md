@@ -97,7 +97,7 @@ aws dynamodb create-table \
 
 ## 🧱 4. Filling Missing Values
 
-- **ACM Certificate ARN**: Obtain from AWS Certificate Manager (must be in us-east-1 for CloudFront). Update in `terraform.tfvars` or module variables.
+// No ACM Certificate ARN is required. HTTPS is provided by CloudFront's default certificate. If you need a custom domain, you must add your own ACM certificate and update the CloudFront module accordingly.
 - **GitHub OAuth Token & Repo**: In `CICD/codepipeline.yaml`, set:
   ```yaml
   GitHub:
@@ -208,7 +208,7 @@ aws dynamodb create-table \
 
 - [ ] S3 and DynamoDB backend created and configured
 - [ ] Terraform initialized and applied for all environments
-- [ ] All required variables and secrets filled in (ACM, GitHub, IAM, etc.)
+- [ ] All required variables and secrets filled in (GitHub, IAM, etc.)
 - [ ] CodePipeline and CodeBuild deployed and working
 - [ ] Application accessible via ALB and CloudFront
 - [ ] WAF rules active and tested

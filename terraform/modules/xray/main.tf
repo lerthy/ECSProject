@@ -9,9 +9,9 @@ resource "aws_xray_group" "default" {
 }
 
 resource "aws_iam_role" "xray" {
-  name = "${var.name}-xray-role"
+  name               = "${var.name}-xray-role"
   assume_role_policy = data.aws_iam_policy_document.xray_assume_role_policy.json
-  tags = var.tags
+  tags               = var.tags
 }
 
 data "aws_iam_policy_document" "xray_assume_role_policy" {

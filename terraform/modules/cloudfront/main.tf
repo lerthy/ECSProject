@@ -9,9 +9,9 @@ resource "aws_cloudfront_distribution" "this" {
   web_acl_id          = var.web_acl_id
   http_version        = "http2"
   default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "s3-frontend"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "s3-frontend"
     viewer_protocol_policy = "redirect-to-https"
     forwarded_values {
       query_string = false
@@ -31,14 +31,13 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
   viewer_certificate {
-    acm_certificate_arn = var.acm_certificate_arn
-    ssl_support_method  = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
+    cloudfront_default_certificate = true
+    minimum_protocol_version       = "TLSv1.2_2021"
   }
   logging_config {
-    bucket = var.logs_bucket_domain_name
+    bucket          = var.logs_bucket_domain_name
     include_cookies = false
-    prefix = var.logs_prefix
+    prefix          = var.logs_prefix
   }
   restrictions {
     geo_restriction {

@@ -92,10 +92,6 @@ variable "alb_zone_id" {
   description = "ALB DNS zone ID (from AWS documentation for your region)"
   type        = string
 }
-variable "acm_certificate_arn" {
-  description = "ACM certificate ARN for HTTPS"
-  type        = string
-}
 
 # ECS
 variable "ecs_name" {

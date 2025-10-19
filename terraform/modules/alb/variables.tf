@@ -41,11 +41,6 @@ variable "health_check_path" {
   default     = "/health"
 }
 
-variable "certificate_arn" {
-  description = "ACM certificate ARN for HTTPS listener"
-  type        = string
-  default     = ""
-}
 
 variable "access_logs_bucket" {
   description = "S3 bucket for ALB access logs"

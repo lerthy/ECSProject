@@ -11,9 +11,10 @@ This module creates an Application Load Balancer, target group, and listeners fo
 - `vpc_id`: VPC ID
 - `target_port`: Target group port
 - `health_check_path`: Health check path (default: /health)
-- `certificate_arn`: ACM certificate ARN for HTTPS (optional)
+- `certificate_arn`: ACM certificate ARN for HTTPS (optional) (removed)
 
 ## Outputs
 - `alb_arn`: ALB ARN
 - `alb_dns_name`: ALB DNS name
 - `target_group_arn`: Target group ARN
+This module creates an Application Load Balancer, target group, and HTTP listener for ECS services. HTTPS is not enabled by default.

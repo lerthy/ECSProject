@@ -25,7 +25,6 @@ This will create the S3 bucket (`observability-terraform-backend`) and DynamoDB 
 
 | Resource/Variable         | Where to Get/Create | Where to Put It | Example Value | Shared/Env-Specific |
 |-------------------------- |--------------------|-----------------|--------------|---------------------|
-| ACM Certificate ARN       | AWS Console: ACM → Request certificate | `modules/alb/variables.tf`, `modules/cloudfront/variables.tf` | `arn:aws:acm:us-east-1:123456789012:certificate/abc123` | Env-Specific |
 | SNS Topic ARN             | AWS Console: SNS → Create topic | `modules/sns/variables.tf` | `arn:aws:sns:us-east-1:123456789012:alerts-topic` | Shared/Env-Specific |
 | IAM Role ARNs (CodePipeline, CodeBuild) | AWS Console: IAM → Create role | `CICD/codepipeline.yaml`, `CICD/buildspec-*.yml` | `arn:aws:iam::123456789012:role/CodePipelineRole` | Shared/Env-Specific |
 | ECR Repository ARN        | AWS Console: ECR → Create repository | `modules/ecs/variables.tf` | `arn:aws:ecr:us-east-1:123456789012:repository/backend` | Shared/Env-Specific |
@@ -33,12 +32,11 @@ This will create the S3 bucket (`observability-terraform-backend`) and DynamoDB 
 | Route53 Hosted Zone ID    | AWS Console: Route53 → Hosted zones | `modules/route53/variables.tf` | `Z1234567890ABC` | Env-Specific |
 
 **How to find/create:**
-- ACM: Request public certificate, validate via DNS/email, copy ARN.
-- SNS: Create topic, copy ARN.
-- IAM: Create role, attach required policies, copy ARN.
-- ECR: Create repository, copy ARN.
-- WAF: Create Web ACL, copy ARN.
-- Route53: Create hosted zone, copy ID.
+SNS: Create topic, copy ARN.
+IAM: Create role, attach required policies, copy ARN.
+ECR: Create repository, copy ARN.
+WAF: Create Web ACL, copy ARN.
+Route53: Create hosted zone, copy ID.
 
 ---
 
@@ -88,7 +86,6 @@ This will create the S3 bucket (`observability-terraform-backend`) and DynamoDB 
 
 | Service                   | Can Terraform Create? | How to Create | Required Config |
 |-------------------------- |----------------------|--------------|----------------|
-| ACM Certificate           | Automated request via `scripts/request_acm_certificate.sh` | Run script, then manually add DNS validation record | Domain name, DNS validation |
 | S3 Backend Bucket         | Automated by `scripts/bootstrap_backend.sh` | No manual setup | Versioning enabled |
 | DynamoDB Table            | Automated by `scripts/bootstrap_backend.sh` | No manual setup | Partition key: LockID |
 | ECS Cluster, Service, Task | Yes (Terraform)      | Automated by Terraform modules | No manual setup |
@@ -141,7 +138,6 @@ aws route53 list-hosted-zones
 | S3 Backend Bucket Name    | Automated by `scripts/bootstrap_backend.sh` | backend/backend.tf | observability-terraform-backend | Shared |
 | DynamoDB Table Name       | Automated by `scripts/bootstrap_backend.sh` | backend/backend.tf | terraform-state-lock | Shared |
 | AWS Region                | AWS Console    | backend/backend.tf | us-east-1 | Shared |
-| ACM Certificate ARN       | Requested by `scripts/request_acm_certificate.sh` (manual DNS validation required) | alb/cloudfront variables.tf | arn:aws:acm:us-east-1:... | Env-Specific |
 | SNS Topic ARN             | SNS Console    | sns variables.tf | arn:aws:sns:us-east-1:... | Shared/Env-Specific |
 | IAM Role ARNs             | IAM Console    | codepipeline.yaml | arn:aws:iam::... | Shared/Env-Specific |
 | ECR Repository ARN        | ECR Console    | ecs variables.tf | arn:aws:ecr:us-east-1:... | Shared/Env-Specific |
@@ -169,5 +165,7 @@ aws route53 list-hosted-zones
 - Validate with AWS CLI before running `terraform apply`.
 
 ---
+
+**Note:** HTTPS is provided by CloudFront using the default AWS certificate. No ACM certificate is required for this deployment. ALB is HTTP-only by default.
 
 Anyone can use this checklist to fill in every missing piece and deploy the project successfully from scratch.

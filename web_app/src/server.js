@@ -75,6 +75,7 @@ app.get('/api', (req, res) => {
 });
 
 // Error handling middleware
+// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({
@@ -101,23 +102,26 @@ if (AWSXRay && AWSXRay.express && AWSXRay.express.closeSegment) {
     app.use(AWSXRay.express.closeSegment());
 }
 
-// Start server
-const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 E-commerce API server running on port ${PORT}`);
-    console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
-    if (AWSXRay && AWSXRay.express) {
-        console.log(`🔍 AWS X-Ray tracing enabled`);
-    } else {
-        console.log(`📊 Running in development mode (X-Ray disabled)`);
-    }
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('SIGTERM received, shutting down gracefully');
-    server.close(() => {
-        console.log('Process terminated');
+// Start server only if not in test environment
+let server;
+if (process.env.NODE_ENV !== 'test') {
+    server = app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 E-commerce API server running on port ${PORT}`);
+        console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+        if (AWSXRay && AWSXRay.express) {
+            console.log(`🔍 AWS X-Ray tracing enabled`);
+        } else {
+            console.log(`📊 Running in development mode (X-Ray disabled)`);
+        }
     });
-});
+
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+        console.log('SIGTERM received, shutting down gracefully');
+        server.close(() => {
+            console.log('Process terminated');
+        });
+    });
+}
 
 module.exports = app;

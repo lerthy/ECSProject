@@ -21,11 +21,7 @@ try {
 }
 
 // In-memory orders storage (in production, use DynamoDB/RDS)
-let orders = [];
-
-// Import cart data (in production, this would be from the same database)
-// For this demo, we'll import the carts from the cart module
-const cartModule = require('./cart');
+const orders = [];
 
 // Validation schemas
 const checkoutSchema = Joi.object({
@@ -82,7 +78,7 @@ function calculateOrderTotals(items) {
 }
 
 // Helper function to simulate payment processing
-function processPayment(paymentMethod, total) {
+function processPayment() {
     // Simulate payment processing delay
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -140,7 +136,7 @@ router.post('/:userId', async (req, res) => {
 
         // Process payment
         subsegment.addAnnotation('processing_payment', true);
-        const paymentResult = await processPayment(paymentMethod, totals.total);
+        const paymentResult = await processPayment();
 
         if (!paymentResult.success) {
             subsegment.addAnnotation('payment_failed', true);

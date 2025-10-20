@@ -21,7 +21,7 @@ try {
 }
 
 // In-memory cart storage (in production, use DynamoDB/Redis)
-let carts = {};
+const carts = {};
 
 // Make carts accessible globally for checkout module
 global.carts = carts;

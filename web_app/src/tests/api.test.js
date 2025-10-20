@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../src/server');
+const app = require('../server.js');
 
 describe('Health Endpoints', () => {
     test('GET /health should return healthy status', async () => {
@@ -97,10 +97,19 @@ describe('Cart Endpoints', () => {
     });
 });
 
-describe('Root Endpoint', () => {
-    test('GET / should return API information', async () => {
+describe('Frontend and API Info Endpoints', () => {
+    test('GET / should return HTML frontend', async () => {
         const response = await request(app)
             .get('/')
+            .expect(200);
+
+        expect(response.headers['content-type']).toMatch(/text\/html/);
+        expect(response.text).toContain('E-Commerce Store');
+    });
+
+    test('GET /api should return API information', async () => {
+        const response = await request(app)
+            .get('/api')
             .expect(200);
 
         expect(response.body).toHaveProperty('message', 'E-commerce API');
@@ -109,11 +118,20 @@ describe('Root Endpoint', () => {
 });
 
 describe('Error Handling', () => {
-    test('GET /nonexistent should return 404', async () => {
+    test('GET /api/nonexistent should return 404 for API routes', async () => {
         const response = await request(app)
-            .get('/nonexistent')
+            .get('/api/nonexistent')
             .expect(404);
 
         expect(response.body).toHaveProperty('error', 'Not Found');
+    });
+
+    test('GET /nonexistent should return HTML for non-API routes (SPA fallback)', async () => {
+        const response = await request(app)
+            .get('/nonexistent')
+            .expect(200);
+
+        expect(response.headers['content-type']).toMatch(/text\/html/);
+        expect(response.text).toContain('E-Commerce Store');
     });
 });

@@ -21,7 +21,7 @@ try {
 }
 
 // In-memory product storage (in production, use DynamoDB/RDS)
-let products = [
+const products = [
     {
         id: '1',
         name: 'Wireless Headphones',

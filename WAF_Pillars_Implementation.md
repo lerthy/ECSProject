@@ -78,21 +78,21 @@ This document explains how each of the five AWS Well-Architected Framework pilla
 
 
 ```mermaid
-flowchart TD
-  User([User]) --> CF_WAF([CloudFront + WAF])
-  CF_WAF --> ALB_WAF([ALB + WAF])
-  ALB_WAF --> ECS_API([ECS (Fargate) API])
-  ALB_WAF -- Route 53 Failover --> Standby([Standby ALB/ECS])
-  ECS_API --> XRay([X-Ray])
-  ECS_API --> CW([CloudWatch])
-  StaticFrontend([Static Frontend (S3)]) <-- CF_WAF
-  Logs([Logs]) --> S3([S3])
-  S3 --> Athena([Athena])
-  Alarms([Alarms/Events]) --> SNS([SNS])
-  SNS --> Notifications([Notifications])
-  Secrets([Secrets]) --> SecretsManager([Secrets Manager])
-  Audit([Audit/Compliance]) --> CloudTrail([CloudTrail])
-  Audit --> Config([Config])
+flowchart LR
+  User --> CF_WAF
+  CF_WAF --> ALB_WAF
+  ALB_WAF --> ECS_API
+  ALB_WAF -- Route53_Failover --> Standby
+  ECS_API --> XRay
+  ECS_API --> CW
+  StaticFrontend <-- CF_WAF
+  Logs --> S3
+  S3 --> Athena
+  Alarms --> SNS
+  SNS --> Notifications
+  Secrets --> SecretsManager
+  Audit --> CloudTrail
+  Audit --> Config
 ```
 
 ---

@@ -1,8 +1,24 @@
 const express = require('express');
 const Joi = require('joi');
 const { v4: uuidv4 } = require('uuid');
-const AWSXRay = require('aws-xray-sdk-core');
 const router = express.Router();
+
+// AWS X-Ray setup (optional)
+let AWSXRay;
+try {
+    AWSXRay = require('aws-xray-sdk-core');
+} catch (error) {
+    // Mock X-Ray for development
+    AWSXRay = {
+        getSegment: () => ({
+            addNewSubsegment: () => ({
+                addAnnotation: () => { },
+                addError: () => { },
+                close: () => { }
+            })
+        })
+    };
+}
 
 // In-memory product storage (in production, use DynamoDB/RDS)
 let products = [

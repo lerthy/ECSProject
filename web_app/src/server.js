@@ -4,7 +4,6 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const path = require('path');
-const AWSXRay = require('aws-xray-sdk-express');
 
 // Import routes
 const productRoutes = require('./routes/products');
@@ -15,8 +14,17 @@ const healthRoutes = require('./routes/health');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// AWS X-Ray tracing setup
-app.use(AWSXRay.express.openSegment('ecommerce-api'));
+// AWS X-Ray tracing setup (optional for development)
+let AWSXRay;
+try {
+    AWSXRay = require('aws-xray-sdk-express');
+    app.use(AWSXRay.express.openSegment('ecommerce-api'));
+    console.log('🔍 AWS X-Ray tracing enabled');
+} catch (error) {
+    console.log('⚠️  AWS X-Ray not available (development mode)');
+    // Create mock middleware for development
+    app.use((req, res, next) => next());
+}
 
 // Middleware
 app.use(helmet({
@@ -88,14 +96,20 @@ app.get('*', (req, res) => {
     }
 });
 
-// Close X-Ray segment
-app.use(AWSXRay.express.closeSegment());
+// Close X-Ray segment (if available)
+if (AWSXRay && AWSXRay.express && AWSXRay.express.closeSegment) {
+    app.use(AWSXRay.express.closeSegment());
+}
 
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 E-commerce API server running on port ${PORT}`);
     console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔍 AWS X-Ray tracing enabled`);
+    if (AWSXRay && AWSXRay.express) {
+        console.log(`🔍 AWS X-Ray tracing enabled`);
+    } else {
+        console.log(`📊 Running in development mode (X-Ray disabled)`);
+    }
 });
 
 // Graceful shutdown

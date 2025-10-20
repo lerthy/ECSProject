@@ -45,7 +45,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files
-app.use(express.static(path.join(__dirname, '../public')));
+// Static files - serve from Vite build output
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // Routes
 app.use('/health', healthRoutes);

@@ -1,3 +1,6 @@
+// Import styles
+import './styles.css';
+
 // E-commerce Frontend Application
 class ECommerceApp {
     constructor() {
@@ -531,3 +534,5 @@ class ECommerceApp {
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new ECommerceApp();
 });
+
+export default ECommerceApp;

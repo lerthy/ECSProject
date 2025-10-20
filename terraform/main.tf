@@ -30,6 +30,7 @@ module "alb" {
   source                     = "./modules/alb"
   name                       = var.alb_name
   security_group_ids         = [module.vpc.nat_gateway_id] # Replace with actual SGs
+  access_logs_bucket         = module.s3.alb_logs_bucket_name
   public_subnet_ids          = module.vpc.public_subnet_ids
   enable_deletion_protection = true
   tags                       = var.tags
@@ -43,6 +44,7 @@ module "alb_standby" {
   source                     = "./modules/alb"
   name                       = "${var.alb_name}-standby"
   security_group_ids         = [module.vpc.nat_gateway_id] # Replace with actual SGs
+  access_logs_bucket         = module.s3.alb_logs_bucket_name
   public_subnet_ids          = module.vpc.public_subnet_ids
   enable_deletion_protection = true
   tags                       = var.tags

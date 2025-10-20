@@ -86,8 +86,10 @@ flowchart TD
   ECS_API --> XRay([X-Ray])
   ECS_API --> CW([CloudWatch])
   StaticFrontend([Static Frontend (S3)]) <-- CF_WAF
-  Logs([Logs]) --> S3([S3]) --> Athena([Athena])
-  Alarms([Alarms/Events]) --> SNS([SNS]) --> Notifications([Notifications])
+  Logs([Logs]) --> S3([S3])
+  S3 --> Athena([Athena])
+  Alarms([Alarms/Events]) --> SNS([SNS])
+  SNS --> Notifications([Notifications])
   Secrets([Secrets]) --> SecretsManager([Secrets Manager])
   Audit([Audit/Compliance]) --> CloudTrail([CloudTrail])
   Audit --> Config([Config])

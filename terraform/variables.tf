@@ -1,8 +1,64 @@
+# Optional: CloudFront aliases
+variable "aliases" {
+  description = "CloudFront distribution aliases"
+  type        = list(string)
+  default     = []
+}
+
+# Required: CloudFront distribution ID for CloudWatch
+variable "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID for metrics"
+  type        = string
+  default     = "dev-cloudfront-dist-id"
+}
+
+# Required: Environment name for CloudWatch
+
+# Required: ALB name for CloudWatch
+# Optional: CloudFront comment
+variable "comment" {
+  description = "Comment for CloudFront distribution"
+  type        = string
+  default     = "Development CloudFront distribution"
+}
+
+# Optional: CloudFront price class
+variable "price_class" {
+  description = "Price class for CloudFront distribution"
+  type        = string
+  default     = "PriceClass_100"
+}
+# Optional: Enable warm standby (default false)
+variable "warm_standby" {
+  description = "Enable warm standby ALB/ECS"
+  type        = bool
+  default     = false
+}
+
+# Optional: Enable WAF (default false)
+variable "waf_enabled" {
+  description = "Enable WAF protection"
+  type        = bool
+  default     = false
+}
+
+# Required: SNS alert email
+variable "sns_alert_email" {
+  description = "Email address for SNS alerts"
+  type        = string
+  default     = "dev-alerts@example.com"
+}
 # CloudWatch dashboard and alarm variables
 variable "dashboard_body" {
   description = "JSON body for CloudWatch dashboard"
   type        = string
   default     = "{}"
+}
+
+variable "environment" {
+  description = "Environment name (e.g., dev, prod, staging)"
+  type        = string
+  default     = "dev-placeholder"
 }
 
 variable "ecs_cpu_threshold" {
@@ -14,7 +70,7 @@ variable "ecs_cpu_threshold" {
 variable "app_secret_string" {
   description = "Secret string for application (example)"
   type        = string
-  default     = "REPLACE_ME"
+  default     = "dev-placeholder"
 }
 variable "region" {
   description = "AWS region"
@@ -124,30 +180,14 @@ variable "container_definitions" {
 }
 
 # CloudFront
-variable "origin_access_identity" {
-  description = "CloudFront origin access identity"
-  type        = string
-}
 
 # CloudWatch
 variable "log_retention_days" {
   description = "Log retention in days"
   type        = number
 }
-variable "dashboard_body" {
-  description = "CloudWatch dashboard JSON"
-  type        = string
-}
-variable "ecs_cpu_threshold" {
-  description = "ECS CPU alarm threshold"
-  type        = number
-}
 
 # SNS
-variable "sns_email" {
-  description = "SNS alert email"
-  type        = string
-}
 variable "sns_slack_webhook" {
   description = "SNS Slack webhook URL"
   type        = string

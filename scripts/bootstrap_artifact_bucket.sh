@@ -11,11 +11,16 @@ if [ -z "$BUCKET_NAME" ]; then
 fi
 
 # Create S3 bucket if it doesn't exist
+
 if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
   echo "S3 bucket $BUCKET_NAME already exists."
 else
   echo "Creating S3 bucket: $BUCKET_NAME in $REGION..."
-  aws s3api create-bucket --bucket "$BUCKET_NAME" --region "$REGION" --create-bucket-configuration LocationConstraint="$REGION"
+  if [ "$REGION" = "us-east-1" ]; then
+    aws s3api create-bucket --bucket "$BUCKET_NAME" --region "$REGION"
+  else
+    aws s3api create-bucket --bucket "$BUCKET_NAME" --region "$REGION" --create-bucket-configuration LocationConstraint="$REGION"
+  fi
 fi
 
 # Enable versioning

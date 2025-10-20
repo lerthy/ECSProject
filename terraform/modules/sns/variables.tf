@@ -9,10 +9,9 @@ variable "tags" {
   default     = {}
 }
 
-variable "email" {
-  description = "Email address for SNS subscription (optional)"
+variable "sns_alert_email" {
+  description = "Email address for SNS alerts (required)"
   type        = string
-  default     = ""
 }
 
 variable "slack_webhook" {

@@ -3,6 +3,18 @@ variable "database_name" {
   type        = string
 }
 
+variable "alb_logs_bucket_name" {
+  description = "S3 bucket name for ALB logs"
+  type        = string
+  default     = "dev-ecom-alb-logs"
+}
+
+variable "cloudfront_logs_bucket_name" {
+  description = "S3 bucket name for CloudFront logs"
+  type        = string
+  default     = "dev-ecom-cloudfront-logs"
+}
+
 variable "s3_bucket" {
   description = "S3 bucket for Athena database"
   type        = string

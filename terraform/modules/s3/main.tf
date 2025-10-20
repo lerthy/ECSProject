@@ -1,13 +1,23 @@
 # S3 Module
 resource "aws_s3_bucket" "frontend" {
   bucket        = var.frontend_bucket_name
-  acl           = "public-read"
   force_destroy = true
-  website {
-    index_document = "index.html"
-    error_document = "error.html"
-  }
   tags = var.tags
+}
+
+resource "aws_s3_bucket_acl" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
+  acl    = "public-read"
+}
+
+resource "aws_s3_bucket_website_configuration" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
+  index_document {
+    suffix = "index.html"
+  }
+  error_document {
+    key = "error.html"
+  }
 }
 
 resource "aws_s3_bucket" "alb_logs" {

@@ -4,6 +4,8 @@ resource "aws_athena_database" "logs" {
   bucket = var.s3_bucket
 }
 
+# Added for observability completion: Athena tables for ALB and CloudFront logs
+
 resource "aws_athena_workgroup" "logs" {
   name = var.workgroup_name
   configuration {

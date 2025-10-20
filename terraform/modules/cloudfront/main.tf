@@ -1,4 +1,8 @@
 # CloudFront Module
+resource "aws_cloudfront_origin_access_identity" "frontend_oai" {
+  comment = "OAI for S3 frontend access"
+}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -27,7 +31,7 @@ resource "aws_cloudfront_distribution" "this" {
     domain_name = var.s3_domain_name
     origin_id   = "s3-frontend"
     s3_origin_config {
-      origin_access_identity = var.origin_access_identity
+      origin_access_identity = aws_cloudfront_origin_access_identity.frontend_oai.cloudfront_access_identity_path
     }
   }
   viewer_certificate {

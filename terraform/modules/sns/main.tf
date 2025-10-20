@@ -5,15 +5,9 @@ resource "aws_sns_topic" "alerts" {
 }
 
 resource "aws_sns_topic_subscription" "email" {
-  count     = var.email != "" ? 1 : 0
+  count     = var.sns_alert_email != "" ? 1 : 0
   topic_arn = aws_sns_topic.alerts.arn
   protocol  = "email"
-  endpoint  = var.email
-}
-
-resource "aws_sns_topic_subscription" "slack" {
-  count     = var.slack_webhook != "" ? 1 : 0
-  topic_arn = aws_sns_topic.alerts.arn
-  protocol  = "https"
-  endpoint  = var.slack_webhook
+  endpoint  = var.sns_alert_email
+  depends_on = [aws_sns_topic.alerts]
 }

@@ -27,10 +27,6 @@ variable "s3_domain_name" {
   type        = string
 }
 
-variable "origin_access_identity" {
-  description = "CloudFront origin access identity for S3"
-  type        = string
-}
 
 
 variable "logs_bucket_domain_name" {

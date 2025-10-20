@@ -5,7 +5,19 @@ provider "aws" {
 }
 
 terraform {
-  backend "s3" {}
+  backend "s3" {
+    bucket = "ecom-terraform-state-dev"
+    key    = "state/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
+module "s3" {
+  source = "./modules/s3"
+  frontend_bucket_name        = var.frontend_bucket_name
+  alb_logs_bucket_name        = var.alb_logs_bucket_name
+  cloudfront_logs_bucket_name = var.cloudfront_logs_bucket_name
+  tags                       = var.tags
 }
 
 module "vpc" {
@@ -18,19 +30,11 @@ module "vpc" {
   tags            = var.tags
 }
 
-module "s3" {
-  source                      = "./modules/s3"
-  frontend_bucket_name        = var.frontend_bucket_name
-  alb_logs_bucket_name        = var.alb_logs_bucket_name
-  cloudfront_logs_bucket_name = var.cloudfront_logs_bucket_name
-  tags                        = var.tags
-}
-
 module "alb" {
   source                     = "./modules/alb"
   name                       = var.alb_name
   security_group_ids         = [module.vpc.nat_gateway_id] # Replace with actual SGs
-  access_logs_bucket         = module.s3.alb_logs_bucket_name
+    access_logs_bucket         = module.s3.alb_logs_bucket_arn
   public_subnet_ids          = module.vpc.public_subnet_ids
   enable_deletion_protection = true
   tags                       = var.tags
@@ -44,7 +48,7 @@ module "alb_standby" {
   source                     = "./modules/alb"
   name                       = "${var.alb_name}-standby"
   security_group_ids         = [module.vpc.nat_gateway_id] # Replace with actual SGs
-  access_logs_bucket         = module.s3.alb_logs_bucket_name
+    access_logs_bucket         = module.s3.alb_logs_bucket_arn
   public_subnet_ids          = module.vpc.public_subnet_ids
   enable_deletion_protection = true
   tags                       = var.tags
@@ -87,7 +91,6 @@ module "ecs_standby" {
 module "cloudfront" {
   source                  = "./modules/cloudfront"
   s3_domain_name          = module.s3.frontend_bucket_arn
-  origin_access_identity  = "<REPLACE_WITH_OAI>"
   logs_bucket_domain_name = module.s3.cloudfront_logs_bucket_arn
   tags                    = var.tags
 }
@@ -101,13 +104,16 @@ module "cloudwatch" {
   ecs_cpu_threshold  = var.ecs_cpu_threshold
   ecs_cluster_name   = module.ecs.cluster_id
   sns_topic_arn      = module.sns.sns_topic_arn
+  alb_name                = var.alb_name
+  environment             = var.environment
+  cloudfront_distribution_id = var.cloudfront_distribution_id
 }
 
 module "sns" {
   source        = "./modules/sns"
   name          = "alerts"
   tags          = var.tags
-  email         = var.sns_email
+  sns_alert_email = var.sns_alert_email
   slack_webhook = var.sns_slack_webhook
 }
 

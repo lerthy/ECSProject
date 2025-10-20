@@ -27,3 +27,37 @@ resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
   ok_actions    = [var.sns_topic_arn]
   tags          = var.tags
 }
+
+resource "aws_cloudwatch_metric_alarm" "alb_latency" {
+  alarm_name          = "alb-latency-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "TargetResponseTime"
+  namespace           = "AWS/ApplicationELB"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 1.0
+  dimensions = {
+    LoadBalancer = var.alb_name
+  }
+  alarm_description   = "ALB latency too high"
+  alarm_actions       = [var.sns_topic_arn]
+  tags                = var.tags
+}
+
+resource "aws_cloudwatch_metric_alarm" "cloudfront_cache_ratio" {
+  alarm_name          = "cloudfront-cache-hit-${var.environment}"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CacheHitRate"
+  namespace           = "AWS/CloudFront"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 80
+  dimensions = {
+    DistributionId = var.cloudfront_distribution_id
+  }
+  alarm_description   = "CloudFront cache hit ratio too low"
+  alarm_actions       = [var.sns_topic_arn]
+  tags                = var.tags
+}

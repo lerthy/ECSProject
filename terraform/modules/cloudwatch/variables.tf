@@ -1,3 +1,20 @@
+# Required: ALB name for CloudWatch
+variable "alb_name" {
+  description = "ALB name for CloudWatch"
+  type        = string
+}
+
+# Required: Environment name for CloudWatch
+variable "environment" {
+  description = "Environment name for CloudWatch"
+  type        = string
+}
+
+# Required: CloudFront distribution ID for CloudWatch
+variable "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID for metrics"
+  type        = string
+}
 variable "name" {
   description = "Name prefix for CloudWatch resources"
   type        = string

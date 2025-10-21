@@ -1,0 +1,31 @@
+# .gitignore for ECSProject-main 2
+# Ignore node modules and build artifacts
+node_modules/
+dist/
+build/
+.env
+.env.*
+.DS_Store
+# Ignore Terraform state files
+*.tfstate
+*.tfstate.*
+.terraform/
+# Ignore logs
+*.log
+# Ignore local scripts output
+*.out
+*.bak
+# Ignore VSCode settings
+.vscode/
+# Ignore coverage and test output
+coverage/
+*.lcov
+# Ignore Python cache
+__pycache__/
+*.pyc
+# Ignore Docker artifacts
+docker-compose.override.yml
+# Ignore miscellaneous
+*.swp
+*.swo
+.idea/

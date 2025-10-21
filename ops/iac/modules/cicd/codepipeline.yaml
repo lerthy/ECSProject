@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CI/CD Pipeline for E-Commerce Platform
+Parameters:
+  PipelineRoleArn:
+    Type: String
+    Description: IAM role ARN for CodePipeline
+  ArtifactBucket:
+    Type: String
+    Description: S3 bucket for pipeline artifacts
+  SnsTopicArn:
+    Type: String
+    Description: SNS topic ARN for notifications
+  GitHubOwner:
+    Type: String
+    Description: GitHub repository owner
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository name
+  GitHubToken:
+    Type: String
+    Description: GitHub OAuth token
+Resources:
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: ecommerce-cicd-pipeline
+      RoleArn: !Ref PipelineRoleArn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHubSource
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                Owner: !Ref GitHubOwner
+                Repo: !Ref GitHubRepo
+                Branch: main
+                OAuthToken: !Ref GitHubToken
+        - Name: Infrastructure
+          Actions:
+            - Name: TerraformBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: TerraformOutput
+              Configuration:
+                ProjectName: ecommerce-terraform
+        - Name: Application
+          Actions:
+            - Name: WebAppBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: WebAppOutput
+              Configuration:
+                ProjectName: ecommerce-webapp
+        - Name: Notify
+          Actions:
+            - Name: SNSNotify
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: SNS
+                Version: 1
+              Configuration:
+                TopicArn: !Ref SnsTopicArn

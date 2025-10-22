@@ -61,7 +61,7 @@ This repository contains production-grade, modular Terraform code to deploy an E
 5. **CI/CD Pipeline**
    - The `modules/cicd/` contains CI/CD pipeline infrastructure
    - The `buildspec-terraform.yml` defines AWS CodeBuild steps for Terraform operations
-   - See `../packages/buildspec-webapp.yml` for application build specification
+   - See `../packages/buildspec-frontend.yml` and `../packages/buildspec-backend.yml` for application build specifications
 
 ## Outputs
 - ALB DNS name and ARN

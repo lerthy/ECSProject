@@ -90,7 +90,8 @@ module "cicd" {
 | artifacts_bucket_name | Name of the S3 bucket used for pipeline artifacts |
 | artifacts_bucket_arn | ARN of the S3 bucket used for pipeline artifacts |
 | terraform_build_project_name | Name of the Terraform CodeBuild project |
-| webapp_build_project_name | Name of the Web App CodeBuild project |
+| frontend_build_project_name | Name of the Frontend CodeBuild project |
+| backend_build_project_name | Name of the Backend CodeBuild project |
 | codepipeline_role_arn | ARN of the CodePipeline service role |
 | codebuild_role_arn | ARN of the CodeBuild service role |
 
@@ -98,8 +99,9 @@ module "cicd" {
 
 The module expects the following buildspec files in your repository:
 
-- `terraform/buildspec-terraform.yml` - For Terraform operations
-- `web_app/buildspec-webapp.yml` - For web application build and deployment
+- `ops/iac/buildspec-terraform.yml` - For Terraform operations
+- `ops/packages/buildspec-frontend.yml` - For frontend web application build and deployment
+- `ops/packages/buildspec-backend.yml` - For backend API build and deployment
 
 ## IAM Permissions
 

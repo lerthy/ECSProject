@@ -1,3 +1,63 @@
+## Architecture Diagram (Textual)
+
+```
+					 [User]
+						|
+						v
+		  [CloudFront Distribution] --logs--> [S3 Log Bucket] --queries--> [Athena]
+						|
+						v
+		  [WAF] (protects CloudFront & ALB)
+						|
+						v
+					 [ALB]
+						|
+						v
+		  [ECS (Fargate) Backend API]
+						|
+						v
+					 [RDS]
+						|
+						v
+		  [CloudWatch] <---metrics/logs---+--- [ALB]
+			  |        <---metrics/logs---+--- [ECS]
+			  |        <---metrics/logs---+--- [CloudFront]
+			  |        <---metrics/logs---+--- [RDS]
+			  |
+			  v
+		  [SNS Alerts] <--- [CloudWatch Alarms]
+			  |
+			  v
+		  [Email/Slack]
+
+		  [X-Ray] <---traces--- [ECS]
+
+		  [Route53 Failover]
+			  |
+			  v
+	[Primary ALB] <----> [Standby ALB/ECS]
+```
+
+# AWS E-Commerce Observability Platform: Component Summary Table
+
+| Component         | AWS Service(s)         | Purpose / Role                                 | Key Connections / Notes                                  |
+|-------------------|------------------------|------------------------------------------------|---------------------------------------------------------|
+| VPC               | VPC, Subnets, IGW, NAT | Network isolation, segmentation                | Used by ALB, ECS, RDS; public/private/db subnets        |
+| S3                | S3                     | Frontend hosting, log storage                  | CloudFront origin; ALB/CloudFront logs; Athena queries   |
+| CloudFront        | CloudFront             | CDN, DDoS protection, frontend delivery        | Serves S3; logs to S3; protected by WAF                  |
+| WAF               | WAFv2                  | Web application firewall                       | Protects CloudFront and ALB                              |
+| ALB               | Application LB         | API traffic routing                            | Receives from CloudFront; forwards to ECS; logs to S3    |
+| ECS (Fargate)     | ECS, Fargate           | Backend API containers                         | Receives from ALB; connects to RDS; logs/traces out      |
+| RDS               | RDS (PostgreSQL)       | Managed database (primary/standby)             | Accessed by ECS; logs/metrics to CloudWatch              |
+| Route53           | Route53                | DNS failover, health checks                    | Routes to ALB (primary/standby)                          |
+| CloudWatch        | CloudWatch             | Logs, metrics, dashboards, alarms              | Receives from ECS, ALB, CloudFront, RDS; triggers SNS    |
+| Athena            | Athena                 | Log analytics (S3 logs)                        | Queries S3 log buckets                                   |
+| X-Ray             | X-Ray                  | Distributed tracing                            | Traces from ECS                                          |
+| SNS               | SNS                    | Alerting (email/Slack)                         | Receives from CloudWatch alarms, RDS, etc.               |
+| CI/CD             | CodePipeline, CodeBuild| Automated deployment (infra/app)               | Deploys via Terraform, builds frontend/backend           |
+| ECR               | ECR                    | Docker image storage                           | Used by CodeBuild, ECS                                   |
+
+---
 # Final Observability Report
 
 ## 1. Architecture Overview

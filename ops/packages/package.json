@@ -4,13 +4,13 @@
     "description": "E-commerce API with product, cart, and checkout functionality",
     "main": "api/server.js",
     "scripts": {
-    "start": "node api/server.js",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "NODE_ENV=development nodemon api/server.js",
-    "dev:client": "vite web",
-    "build": "vite build web",
-    "build:server": "node api/server.js",
-    "preview": "vite preview web",
+        "start": "node api/server.js",
+        "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+        "dev:server": "NODE_ENV=development nodemon api/server.js",
+        "dev:client": "vite web",
+        "build": "vite build web",
+        "build:server": "node api/server.js",
+        "preview": "vite preview web",
         "test": "jest",
         "lint": "eslint src/",
         "lint:fix": "eslint src/ --fix",
@@ -35,7 +35,9 @@
         "uuid": "^9.0.1",
         "joi": "^17.11.0",
         "aws-xray-sdk-express": "^3.5.1",
-        "aws-xray-sdk-core": "^3.5.1"
+        "aws-xray-sdk-core": "^3.5.1",
+        "pg": "^8.11.3",
+        "aws-sdk": "^2.1490.0"
     },
     "devDependencies": {
         "nodemon": "^3.0.2",

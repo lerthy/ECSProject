@@ -5,6 +5,9 @@ const compression = require('compression');
 const morgan = require('morgan');
 const path = require('path');
 
+// Import database connection
+const dbConnection = require('./database/connection');
+
 // Import routes
 const productRoutes = require('./routes/products');
 const cartRoutes = require('./routes/cart');
@@ -24,6 +27,20 @@ try {
     console.log('⚠️  AWS X-Ray not available (development mode)');
     // Create mock middleware for development
     app.use((req, res, next) => next());
+}
+
+// Initialize database connection
+async function initializeDatabase() {
+    try {
+        await dbConnection.initialize();
+        console.log('🗄️  Database connection initialized successfully');
+    } catch (error) {
+        console.error('❌ Failed to initialize database connection:', error);
+        // Don't exit immediately in development - allow health checks to report the issue
+        if (process.env.NODE_ENV === 'production') {
+            process.exit(1);
+        }
+    }
 }
 
 // Middleware
@@ -105,22 +122,70 @@ if (AWSXRay && AWSXRay.express && AWSXRay.express.closeSegment) {
 // Start server only if not in test environment
 let server;
 if (process.env.NODE_ENV !== 'test') {
-    server = app.listen(PORT, '0.0.0.0', () => {
-        console.log(`🚀 E-commerce API server running on port ${PORT}`);
-        console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
-        if (AWSXRay && AWSXRay.express) {
-            console.log(`🔍 AWS X-Ray tracing enabled`);
+    // Initialize database and start server
+    async function startServer() {
+        try {
+            // Initialize database first
+            await initializeDatabase();
+
+            server = app.listen(PORT, '0.0.0.0', () => {
+                console.log(`🚀 E-commerce API server running on port ${PORT}`);
+                console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+                console.log(`🗄️  Database Host: ${process.env.DB_HOST || 'not configured'}`);
+                if (AWSXRay && AWSXRay.express) {
+                    console.log(`🔍 AWS X-Ray tracing enabled`);
+                } else {
+                    console.log(`📊 Running in development mode (X-Ray disabled)`);
+                }
+            });
+        } catch (error) {
+            console.error('❌ Failed to start server:', error);
+            process.exit(1);
+        }
+    }
+
+    // Start the server
+    startServer();
+
+    // Graceful shutdown
+    process.on('SIGTERM', async () => {
+        console.log('SIGTERM received, shutting down gracefully');
+
+        try {
+            await dbConnection.close();
+            console.log('🗄️  Database connection closed');
+        } catch (error) {
+            console.error('❌ Error closing database connection:', error);
+        }
+
+        if (server) {
+            server.close(() => {
+                console.log('🛑 Process terminated');
+                process.exit(0);
+            });
         } else {
-            console.log(`📊 Running in development mode (X-Ray disabled)`);
+            process.exit(0);
         }
     });
 
-    // Graceful shutdown
-    process.on('SIGTERM', () => {
-        console.log('SIGTERM received, shutting down gracefully');
-        server.close(() => {
-            console.log('Process terminated');
-        });
+    process.on('SIGINT', async () => {
+        console.log('SIGINT received, shutting down gracefully');
+
+        try {
+            await dbConnection.close();
+            console.log('🗄️  Database connection closed');
+        } catch (error) {
+            console.error('❌ Error closing database connection:', error);
+        }
+
+        if (server) {
+            server.close(() => {
+                console.log('🛑 Process terminated');
+                process.exit(0);
+            });
+        } else {
+            process.exit(0);
+        }
     });
 }
 

@@ -26,7 +26,7 @@ phases:
       - npm test -- --coverage --watchAll=false || echo "Tests skipped - no tests configured"
       - echo Preparing Docker context...
       - cd ../..
-      - echo Current directory structure:
+      - echo "Current directory structure:"
       - ls -la
 
   build:

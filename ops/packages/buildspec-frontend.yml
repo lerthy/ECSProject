@@ -30,8 +30,13 @@ phases:
       - echo Syncing frontend assets to S3...
       - aws s3 sync ./dist s3://$FRONTEND_BUCKET --delete --cache-control "public, max-age=31536000"
       - echo Creating CloudFront invalidation...
-      - INVALIDATION_ID=$(aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DIST_ID --paths "/*" --query 'Invalidation.Id' --output text)
-      - echo "CloudFront invalidation created with ID: $INVALIDATION_ID"
+      - >
+        INVALIDATION_ID=$(aws cloudfront create-invalidation 
+        --distribution-id $CLOUDFRONT_DIST_ID 
+        --paths "/*" 
+        --query 'Invalidation.Id' 
+        --output text)
+      - echo "CloudFront invalidation created with ID $INVALIDATION_ID"
 
   post_build:
     commands:

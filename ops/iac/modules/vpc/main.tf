@@ -38,6 +38,58 @@ resource "aws_subnet" "private" {
   tags              = merge(var.tags, { Name = "${var.name}-private-${count.index}" })
 }
 
+# Security Groups
+resource "aws_security_group" "alb" {
+  name_prefix = "${var.name}-alb-"
+  vpc_id      = aws_vpc.this.id
+  description = "Security group for ALB"
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(var.tags, { Name = "${var.name}-alb-sg" })
+}
+
+resource "aws_security_group" "ecs" {
+  name_prefix = "${var.name}-ecs-"
+  vpc_id      = aws_vpc.this.id
+  description = "Security group for ECS tasks"
+
+  ingress {
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(var.tags, { Name = "${var.name}-ecs-sg" })
+}
+
 output "vpc_id" {
   value = aws_vpc.this.id
 }
@@ -52,4 +104,10 @@ output "igw_id" {
 }
 output "nat_gateway_id" {
   value = aws_nat_gateway.this.id
+}
+output "alb_security_group_id" {
+  value = aws_security_group.alb.id
+}
+output "ecs_security_group_id" {
+  value = aws_security_group.ecs.id
 }

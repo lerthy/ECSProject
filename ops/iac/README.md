@@ -3,43 +3,108 @@
 This repository contains production-grade, modular Terraform code to deploy an E-Commerce platform on AWS with full observability and CI/CD pipeline integration.
 
 ## Directory Structure
-- `modules/` — Reusable Terraform modules (vpc, ecs, alb, s3, cloudfront, cloudwatch, sns, xray, athena)
-- `environments/` — Environment-specific configurations (dev, staging, prod)
-- `CICD/` — CI/CD pipeline (AWS CodePipeline, CodeBuild)
+
+### Core Infrastructure Files
+- `main.tf` — Main Terraform configuration file
+- `variables.tf` — Variable definitions
+- `outputs.tf` — Output definitions
+- `backend.tf` — Remote state backend configuration
+
+### AWS Well-Architected Framework Implementation
+- `cost_optimization.tf` — Cost optimization pillar implementation
+- `operational_excellence.tf` — Operational excellence pillar implementation
+- `performance_efficiency.tf` — Performance efficiency pillar implementation
+- `security.tf` — Security pillar implementation
+- `route53_failover.tf` — Route53 health checks and failover configuration
+- `waf.tf` — Web Application Firewall configuration
+
+### Reusable Modules
+- `modules/` — Reusable Terraform modules
+  - `alb/` — Application Load Balancer module
+  - `athena/` — Amazon Athena module for analytics
+  - `cicd/` — CI/CD pipeline module (AWS CodePipeline, CodeBuild)
+  - `cloudfront/` — CloudFront CDN module
+  - `cloudwatch/` — CloudWatch monitoring module
+  - `ecr/` — Elastic Container Registry module
+  - `ecs/` — Elastic Container Service module
+  - `monitoring_alarms/` — CloudWatch alarms module
+  - `route53/` — Route53 DNS module
+  - `s3/` — S3 storage module
+  - `sns/` — Simple Notification Service module
+  - `vpc/` — Virtual Private Cloud module
+  - `xray/` — AWS X-Ray tracing module
+
+### Configuration
+- `../config/dev/` — Development environment configuration
+  - `terraform.tfvars` — Development environment variables
+  - `README.md` — Development environment setup guide
+
+### Build Configuration
+- `buildspec-terraform.yml` — AWS CodeBuild specification for Terraform operations
 
 ## Deployment Steps
+
 1. **Configure Remote Backend**
-   - Edit `backend/backend.tf` with your S3 bucket, DynamoDB table, and region.
+   - Edit `backend.tf` with your S3 bucket, DynamoDB table, and region.
+
 2. **Set Environment Variables**
-   - Edit the appropriate `environments/<env>/terraform.tfvars` for your environment.
+   - Edit `../config/dev/terraform.tfvars` for development environment configuration.
+   - Add additional environment folders under `../config/` as needed (staging, prod).
+
 3. **Initialize Terraform**
-   - `cd terraform`
-   - `terraform init -backend-config=backend/backend.tf`
+   - `terraform init`
+
 4. **Plan and Apply**
-   - `terraform plan -var-file=environments/prod/terraform.tfvars`
-   - `terraform apply -var-file=environments/prod/terraform.tfvars`
+   - `terraform plan -var-file="../config/dev/terraform.tfvars" -out=dev.tfplan`
+   - `terraform apply`
+
 5. **CI/CD Pipeline**
-   - The `CICD/codepipeline.yaml` and `buildspec-*.yml` files define the AWS CodePipeline and CodeBuild steps to validate, plan, apply, build/push Docker images, update ECS, and deploy the frontend to S3 with CloudFront invalidation.
+   - The `modules/cicd/` contains CI/CD pipeline infrastructure
+   - The `buildspec-terraform.yml` defines AWS CodeBuild steps for Terraform operations
+   - See `../packages/buildspec-webapp.yml` for application build specification
 
 ## Outputs
-- ALB DNS name
-- CloudFront domain name
-- S3 bucket ARNs
-- ECS cluster/service/task ARNs
-- SNS topic ARN
-- Athena database/workgroup names
+- ALB DNS name and ARN
+- CloudFront distribution domain name and ARN
+- S3 bucket names and ARNs
+- ECS cluster, service, and task definition ARNs
+- VPC and subnet IDs
+- ECR repository URLs
+- SNS topic ARNs for notifications
+- Athena database and workgroup names
+- Route53 hosted zone ID
+- CloudWatch log group names
+- X-Ray service map and trace analytics
 
 ## Best Practices
-- All modules are parameterized and reusable.
-- IAM roles use least-privilege.
-- Observability is enabled for ECS, ALB, CloudFront, and logs are stored in S3/Athena.
-- Alarms notify via SNS (email/Slack).
+
+### AWS Well-Architected Framework
+This infrastructure implements all five pillars of the AWS Well-Architected Framework:
+- **Operational Excellence**: Automated deployments, monitoring, and operational procedures
+- **Security**: IAM roles with least-privilege, WAF protection, VPC security groups
+- **Reliability**: Multi-AZ deployments, health checks, auto-scaling, failover mechanisms
+- **Performance Efficiency**: Auto-scaling, CloudFront CDN, optimized instance types
+- **Cost Optimization**: Resource tagging, right-sizing, Reserved Instances recommendations
+
+### Infrastructure Design
+- All modules are parameterized and reusable across environments
+- IAM roles follow least-privilege principle
+- Comprehensive observability with CloudWatch, X-Ray, and centralized logging
+- All logs are stored in S3 and queryable via Athena
+- SNS notifications for critical alarms and events
+- WAF protection for web applications
+- Route53 health checks and DNS failover
 
 ## Replace Placeholders
-- Replace all `<REPLACE_WITH_...>` values in tfvars and workflow secrets.
+- Replace all `<REPLACE_WITH_...>` values in `../config/dev/terraform.tfvars`
+- Update AWS account-specific values (region, account ID, etc.)
+- Configure notification endpoints (email addresses, Slack webhooks)
+- Set appropriate environment-specific values for resource sizing and scaling
 
----
-
-For details, see each module's README.
+## Related Documentation
+- See `../config/dev/README.md` for environment-specific setup
+- See each module's individual README.md for detailed configuration options
+- See `../packages/README.md` for application deployment information
+- See project docs/ folder for architecture and deployment guides
 
 **Note:** HTTPS is provided by CloudFront using the default AWS certificate. No ACM certificate is required for this deployment. ALB is HTTP-only by default.

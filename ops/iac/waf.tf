@@ -64,10 +64,8 @@ resource "aws_wafv2_web_acl" "alb" {
   }
 }
 
-resource "aws_wafv2_web_acl_association" "cloudfront" {
-  resource_arn = module.cloudfront.cloudfront_distribution_id
-  web_acl_arn  = aws_wafv2_web_acl.cloudfront.arn
-}
+# CloudFront WAF association is done directly in the CloudFront distribution
+# See modules/cloudfront/main.tf for the web_acl_id parameter
 
 resource "aws_wafv2_web_acl_association" "alb" {
   resource_arn = module.alb.alb_arn

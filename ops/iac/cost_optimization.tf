@@ -2,7 +2,7 @@
 
 # S3 Lifecycle for log storage
 resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
-  bucket = module.s3.alb_logs_bucket_arn
+  bucket = module.s3.alb_logs_bucket_name
   rule {
     id     = "log-expiry"
     status = "Enabled"

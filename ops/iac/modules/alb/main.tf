@@ -10,16 +10,17 @@ resource "aws_lb" "this" {
 
   access_logs {
     bucket  = var.access_logs_bucket
-    prefix  = "alb-logs/"
+    prefix  = "alb-logs"
     enabled = true
   }
 }
 
 resource "aws_lb_target_group" "api" {
-  name     = "${var.name}-api"
-  port     = var.target_port
-  protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  name        = "${var.name}-api"
+  port        = var.target_port
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip" # Required for Fargate
   health_check {
     path                = var.health_check_path
     interval            = 30

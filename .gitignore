@@ -10,6 +10,8 @@ build/
 *.tfstate
 *.tfstate.*
 .terraform/
+backend.tf
+*.tfvars
 # Ignore logs
 *.log
 # Ignore local scripts output

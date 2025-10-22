@@ -11,13 +11,12 @@ resource "aws_cloudwatch_metric_alarm" "alb_latency" {
   statistic           = "Average"
   threshold           = var.alb_latency_threshold
   dimensions = {
-    LoadBalancer = module.alb.alb_arn
+    LoadBalancer = var.alb_arn
   }
   alarm_description = "ALB latency exceeds threshold"
-  alarm_actions     = [module.sns.sns_topic_arn]
-  ok_actions        = [module.sns.sns_topic_arn]
+  alarm_actions     = [var.sns_topic_arn]
+  ok_actions        = [var.sns_topic_arn]
   tags              = var.tags
-  depends_on        = [module.alb]
 }
 
 resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
@@ -30,13 +29,12 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
   statistic           = "Sum"
   threshold           = var.alb_5xx_threshold
   dimensions = {
-    LoadBalancer = module.alb.alb_arn
+    LoadBalancer = var.alb_arn
   }
   alarm_description = "ALB 5xx errors exceed threshold"
-  alarm_actions     = [module.sns.sns_topic_arn]
-  ok_actions        = [module.sns.sns_topic_arn]
+  alarm_actions     = [var.sns_topic_arn]
+  ok_actions        = [var.sns_topic_arn]
   tags              = var.tags
-  depends_on        = [module.alb]
 }
 
 resource "aws_cloudwatch_metric_alarm" "cloudfront_cache_hit_ratio" {
@@ -49,12 +47,11 @@ resource "aws_cloudwatch_metric_alarm" "cloudfront_cache_hit_ratio" {
   statistic           = "Average"
   threshold           = var.cloudfront_cache_hit_ratio_threshold
   dimensions = {
-    DistributionId = module.cloudfront.cloudfront_distribution_id
+    DistributionId = var.cloudfront_distribution_id
     Region         = "Global"
   }
   alarm_description = "CloudFront cache hit ratio below threshold"
-  alarm_actions     = [module.sns.sns_topic_arn]
-  ok_actions        = [module.sns.sns_topic_arn]
+  alarm_actions     = [var.sns_topic_arn]
+  ok_actions        = [var.sns_topic_arn]
   tags              = var.tags
-  depends_on        = [module.cloudfront]
 }

@@ -72,7 +72,7 @@ resource "aws_codebuild_project" "terraform" {
 
     environment_variable {
       name  = "AWS_DEFAULT_REGION"
-      value = data.aws_region.current.name
+      value = data.aws_region.current.id
     }
   }
 
@@ -137,7 +137,7 @@ resource "aws_codebuild_project" "webapp" {
 
     environment_variable {
       name  = "AWS_DEFAULT_REGION"
-      value = data.aws_region.current.name
+      value = data.aws_region.current.id
     }
   }
 
@@ -215,24 +215,8 @@ resource "aws_codepipeline" "pipeline" {
     }
   }
 
-  dynamic "stage" {
-    for_each = var.sns_topic_arn != "" ? [1] : []
-    content {
-      name = "Notify"
-
-      action {
-        name     = "SNSNotify"
-        category = "Invoke"
-        owner    = "AWS"
-        provider = "SNS"
-        version  = "1"
-
-        configuration = {
-          TopicArn = var.sns_topic_arn
-        }
-      }
-    }
-  }
+  # SNS notification action not available in us-east-1
+  # Using CloudWatch Events for notifications instead
 
   tags = var.tags
 }

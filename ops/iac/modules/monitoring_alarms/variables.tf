@@ -12,6 +12,21 @@ variable "alb_name" {
   type        = string
 }
 
+variable "alb_arn" {
+  description = "ARN of the ALB"
+  type        = string
+}
+
+variable "sns_topic_arn" {
+  description = "SNS topic ARN for alarm notifications"
+  type        = string
+}
+
+variable "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID"
+  type        = string
+}
+
 variable "alb_latency_threshold" {
   description = "Threshold for ALB latency alarm (seconds)"
   type        = number

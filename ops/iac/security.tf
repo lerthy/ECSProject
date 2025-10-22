@@ -6,7 +6,7 @@ data "aws_kms_key" "s3" {
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "frontend" {
-  bucket = module.s3.frontend_bucket_arn
+  bucket = module.s3.frontend_bucket_name
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm     = "aws:kms"
@@ -22,7 +22,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "frontend" {
 # CloudTrail
 resource "aws_cloudtrail" "main" {
   name                          = "main-trail"
-  s3_bucket_name                = module.s3.alb_logs_bucket_arn
+  s3_bucket_name                = module.s3.alb_logs_bucket_name
   include_global_service_events = true
   is_multi_region_trail         = true
   enable_log_file_validation    = true
@@ -54,12 +54,12 @@ data "aws_iam_policy_document" "config_assume_role_policy" {
 
 resource "aws_iam_role_policy_attachment" "config_policy" {
   role       = aws_iam_role.config.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSConfigRole"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWS_ConfigRole"
 }
 
 resource "aws_config_delivery_channel" "main" {
   name           = "main-channel"
-  s3_bucket_name = module.s3.alb_logs_bucket_arn
+  s3_bucket_name = module.s3.alb_logs_bucket_name
   depends_on     = [aws_config_configuration_recorder.main]
 }
 

@@ -3,6 +3,8 @@ resource "aws_cloudfront_origin_access_identity" "frontend_oai" {
   comment = "OAI for S3 frontend access"
 }
 
+data "aws_caller_identity" "current" {}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled             = true
   is_ipv6_enabled     = true

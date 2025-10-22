@@ -1,15 +1,5 @@
-# Root Terraform Composition
-
 provider "aws" {
   region = var.region
-}
-
-terraform {
-  backend "s3" {
-    bucket = "bardhi-ecom-terraform-state-dev"
-    key    = "state/terraform.tfstate"
-    region = "us-east-1"
-  }
 }
 
 module "s3" {
@@ -33,8 +23,8 @@ module "vpc" {
 module "alb" {
   source                     = "./modules/alb"
   name                       = var.alb_name
-  security_group_ids         = [module.vpc.nat_gateway_id] # Replace with actual SGs
-  access_logs_bucket         = module.s3.alb_logs_bucket_arn
+  security_group_ids         = [module.vpc.alb_security_group_id]
+  access_logs_bucket         = module.s3.alb_logs_bucket_name
   public_subnet_ids          = module.vpc.public_subnet_ids
   enable_deletion_protection = true
   tags                       = var.tags
@@ -47,8 +37,8 @@ module "alb" {
 module "alb_standby" {
   source                     = "./modules/alb"
   name                       = "${var.alb_name}-standby"
-  security_group_ids         = [module.vpc.nat_gateway_id] # Replace with actual SGs
-  access_logs_bucket         = module.s3.alb_logs_bucket_arn
+  security_group_ids         = [module.vpc.alb_security_group_id]
+  access_logs_bucket         = module.s3.alb_logs_bucket_name
   public_subnet_ids          = module.vpc.public_subnet_ids
   enable_deletion_protection = true
   tags                       = var.tags
@@ -66,7 +56,7 @@ module "ecs" {
   container_definitions = var.container_definitions
   desired_count         = var.desired_count
   private_subnet_ids    = module.vpc.private_subnet_ids
-  security_group_ids    = [module.vpc.nat_gateway_id] # Replace with actual SGs
+  security_group_ids    = [module.vpc.ecs_security_group_id]
   target_group_arn      = module.alb.target_group_arn
   container_name        = var.container_name
   container_port        = var.container_port
@@ -82,34 +72,31 @@ module "ecs_standby" {
   container_definitions = var.container_definitions
   desired_count         = 1 # Minimal standby
   private_subnet_ids    = module.vpc.private_subnet_ids
-  security_group_ids    = [module.vpc.nat_gateway_id] # Replace with actual SGs
+  security_group_ids    = [module.vpc.ecs_security_group_id]
   target_group_arn      = module.alb_standby.target_group_arn
   container_name        = var.container_name
   container_port        = var.container_port
 }
 
-<<<<<<< HEAD
+# Route 53 Failover for Warm Standby (commented out due to access restrictions)
+# Uncomment when you have access to the Route53 hosted zone
 
+# module "route53_failover" {
+#   source               = "./modules/route53"
+#   primary_alb_dns_name = module.alb.alb_dns_name
+#   standby_alb_dns_name = module.alb_standby.alb_dns_name
+#   alb_zone_id          = var.alb_zone_id
+#   route53_zone_id      = var.route53_zone_id
+#   api_dns_name         = var.api_dns_name
+#   health_check_path    = var.health_check_path
+#   tags                 = var.tags
+# }
 
-# Route 53 Failover for Warm Standby (using module)
-
-module "route53_failover" {
-  source                = "./modules/route53"
-  primary_alb_dns_name  = module.alb.alb_dns_name
-  standby_alb_dns_name  = module.alb_standby.alb_dns_name
-  alb_zone_id           = var.alb_zone_id
-  route53_zone_id       = var.route53_zone_id
-  api_dns_name          = var.api_dns_name
-  health_check_path     = var.health_check_path
-  tags                  = var.tags
-}
-
-=======
->>>>>>> d097566f3190fa235805e7827d15d2c87211160e
 module "cloudfront" {
   source                  = "./modules/cloudfront"
-  s3_domain_name          = module.s3.frontend_bucket_arn
-  logs_bucket_domain_name = module.s3.cloudfront_logs_bucket_arn
+  s3_domain_name          = module.s3.frontend_bucket_domain_name
+  logs_bucket_domain_name = module.s3.cloudfront_logs_bucket_domain_name
+  web_acl_id              = aws_wafv2_web_acl.cloudfront.arn
   tags                    = var.tags
 }
 
@@ -144,17 +131,20 @@ module "xray" {
 module "athena" {
   source          = "./modules/athena"
   database_name   = var.athena_database_name
-  s3_bucket       = module.s3.alb_logs_bucket_arn
+  s3_bucket       = module.s3.alb_logs_bucket_name
   workgroup_name  = var.athena_workgroup_name
   output_location = var.athena_output_location
   tags            = var.tags
 }
 
 module "monitoring_alarms" {
-  source      = "./modules/monitoring_alarms"
-  alb_name    = var.alb_name
-  environment = var.environment
-  tags        = var.tags
+  source                     = "./modules/monitoring_alarms"
+  alb_name                   = var.alb_name
+  alb_arn                    = module.alb.alb_arn
+  sns_topic_arn              = module.sns.sns_topic_arn
+  cloudfront_distribution_id = module.cloudfront.cloudfront_distribution_id
+  environment                = var.environment
+  tags                       = var.tags
 }
 
 module "cicd" {
@@ -171,7 +161,13 @@ module "cicd" {
   frontend_bucket_name       = module.s3.frontend_bucket_name
   cloudfront_distribution_id = module.cloudfront.distribution_id
   alb_name                   = var.alb_name
-  app_health_url             = "https://${module.alb.dns_name}"
-  sns_topic_arn              = module.sns.topic_arn
+  app_health_url             = "https://${module.alb.alb_dns_name}"
+  sns_topic_arn              = module.sns.sns_topic_arn
   tags                       = var.tags
+}
+
+module "ecr" {
+  source      = "./modules/ecr"
+  environment = var.environment
+  tags        = var.tags
 }

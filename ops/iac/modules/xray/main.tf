@@ -1,6 +1,6 @@
 # X-Ray Module
 resource "aws_xray_group" "default" {
-  filter_expression = ""
+  filter_expression = "service(\"${var.name}\")"
   group_name        = var.name
   insights_configuration {
     insights_enabled = true

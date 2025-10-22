@@ -23,7 +23,17 @@ phases:
   pre_build:
     commands:
       - echo Starting Terraform operations...
+      - echo "Initial working directory:"
+      - pwd
+      - echo "Initial directory structure:"
+      - ls -la
       - cd ops/iac
+      - echo "After cd ops/iac:"
+      - pwd
+      - echo "Directory structure from ops/iac:"
+      - ls -la
+      - echo "Checking for config directory:"
+      - ls -la ../config/dev/ || echo "Config directory not found at ../config/dev/"
       - echo Initializing Terraform...
       - terraform init -backend=false
       - echo Formatting and validating Terraform...
@@ -39,6 +49,12 @@ phases:
   build:
     commands:
       - echo Creating and applying Terraform plan...
+      - echo "Current working directory:"
+      - pwd
+      - echo "Directory structure:"
+      - ls -la ../config/dev/
+      - echo "Checking terraform.tfvars file:"
+      - ls -la ../config/dev/terraform.tfvars
       - terraform plan -detailed-exitcode -out=tfplan -var-file="../config/dev/terraform.tfvars"
       - terraform show -json tfplan > tfplan.json
       - echo Applying Terraform changes...
@@ -61,11 +77,12 @@ artifacts:
     - ops/iac/tfsec-results.json
   name: terraform-artifacts
 
-reports:
-  terraform-security:
-    files:
-      - ops/iac/tfsec-results.json
-    file-format: 'JSON'
+# Temporarily disabled due to IAM permission issues
+# reports:
+#   terraform-security:
+#     files:
+#       - ops/iac/tfsec-results.json
+#     file-format: 'JSON'
 
 cache:
   paths:

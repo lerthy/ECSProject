@@ -11,8 +11,14 @@ phases:
       nodejs: 20
     commands:
       - echo Installing backend dependencies...
+      - echo "Working directory:"
+      - pwd
+      - echo "Directory structure:"
+      - ls -la
       - cd ops/packages/api
-      - npm ci
+      - npm ci --include=dev
+      - echo "Checking installed packages:"
+      - npm list --depth=0
 
   pre_build:
     commands:
@@ -20,11 +26,12 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO
       - echo Running code quality checks...
+      - cd ops/packages/api
       - npm run lint || echo "Lint check skipped - no linter configured"
       - echo Running unit tests...
       - npm test -- --coverage --watchAll=false || echo "Tests skipped - no tests configured"
       - echo Preparing Docker context...
-      - cd ../..
+      - cd ../../..
       - echo "Current directory structure:"
       - ls -la
 
@@ -53,13 +60,14 @@ phases:
       - echo Getting service endpoint...
       - aws elbv2 describe-load-balancers --names $ALB_NAME --query 'LoadBalancers[0].DNSName' || echo "ALB not found"
       - echo Generating deployment manifest...
-      - cd ops/packages
+      - echo "Current working directory before manifest generation:"
+      - pwd
       - printf '[{"name":"api","imageUri":"%s"}]' $ECR_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json
       - cat imagedefinitions.json
 
 artifacts:
   files:
-    - ops/packages/imagedefinitions.json
+    - imagedefinitions.json
     - ops/packages/api/coverage/**/*
     - trivy-results.json
   name: backend-artifacts

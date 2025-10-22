@@ -16,8 +16,83 @@ module "vpc" {
   cidr_block      = var.vpc_cidr_block
   public_subnets  = var.public_subnets
   private_subnets = var.private_subnets
+  db_subnets      = var.db_subnets
   azs             = var.azs
   tags            = var.tags
+}
+
+module "rds" {
+  source = "./modules/rds"
+
+  name                  = "${var.ecs_name}-db"
+  vpc_id                = module.vpc.vpc_id
+  private_subnet_ids    = module.vpc.db_subnet_ids
+  app_security_group_id = module.vpc.ecs_security_group_id
+
+  # Database configuration
+  database_name  = "ecommerce"
+  instance_class = var.rds_instance_class
+  engine_version = var.rds_engine_version
+
+  # Storage
+  allocated_storage     = var.rds_allocated_storage
+  max_allocated_storage = var.rds_max_allocated_storage
+
+  # Reliability settings
+  multi_az                = var.rds_multi_az
+  backup_retention_period = var.rds_backup_retention_period
+  deletion_protection     = var.rds_deletion_protection
+  skip_final_snapshot     = var.environment == "dev" ? true : false
+
+  # Monitoring
+  monitoring_interval          = 60
+  performance_insights_enabled = true
+  alarm_actions                = [module.sns.sns_topic_arn]
+
+  # Read replica for production
+  create_read_replica         = var.environment == "prod" ? true : false
+  read_replica_instance_class = var.rds_instance_class
+
+  tags = var.tags
+}
+
+# Standby RDS (Warm Standby for Database)
+module "rds_standby" {
+  source = "./modules/rds"
+
+  name                  = "${var.ecs_name}-db-standby"
+  vpc_id                = module.vpc.vpc_id
+  private_subnet_ids    = module.vpc.db_subnet_ids
+  app_security_group_id = module.vpc.ecs_security_group_id
+
+  # Database configuration - same as primary
+  database_name  = "ecommerce"
+  instance_class = var.rds_instance_class
+  engine_version = var.rds_engine_version
+
+  # Storage - smaller for standby
+  allocated_storage     = var.rds_allocated_storage
+  max_allocated_storage = var.rds_max_allocated_storage
+
+  # Reliability settings - less frequent backups for standby
+  multi_az                = false # Single AZ for standby to reduce costs
+  backup_retention_period = 3     # Shorter retention for standby
+  deletion_protection     = var.rds_deletion_protection
+  skip_final_snapshot     = var.environment == "dev" ? true : false
+
+  # Monitoring - basic monitoring for standby
+  monitoring_interval          = 0     # No enhanced monitoring for standby
+  performance_insights_enabled = false # Disabled for standby
+  alarm_actions                = [module.sns.sns_topic_arn]
+
+  # No read replica for standby
+  create_read_replica         = false
+  read_replica_instance_class = var.rds_instance_class
+
+  tags = merge(var.tags, {
+    Purpose = "Standby"
+    Tier    = "Database"
+  })
 }
 
 module "alb" {
@@ -53,7 +128,7 @@ module "ecs" {
   tags                  = var.tags
   cpu                   = var.cpu
   memory                = var.memory
-  container_definitions = var.container_definitions
+  container_definitions = data.template_file.container_definition.rendered
   desired_count         = var.desired_count
   private_subnet_ids    = module.vpc.private_subnet_ids
   security_group_ids    = [module.vpc.ecs_security_group_id]
@@ -69,7 +144,7 @@ module "ecs_standby" {
   tags                  = var.tags
   cpu                   = var.cpu
   memory                = var.memory
-  container_definitions = var.container_definitions
+  container_definitions = data.template_file.container_definition_standby.rendered
   desired_count         = 1 # Minimal standby
   private_subnet_ids    = module.vpc.private_subnet_ids
   security_group_ids    = [module.vpc.ecs_security_group_id]

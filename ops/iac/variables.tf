@@ -100,6 +100,10 @@ variable "private_subnets" {
   description = "List of private subnet CIDRs"
   type        = list(string)
 }
+variable "db_subnets" {
+  description = "List of database subnet CIDRs"
+  type        = list(string)
+}
 variable "azs" {
   description = "List of availability zones"
   type        = list(string)
@@ -174,10 +178,6 @@ variable "desired_count" {
   description = "Number of ECS tasks"
   type        = number
 }
-variable "container_definitions" {
-  description = "Container definitions JSON"
-  type        = string
-}
 
 # CloudFront
 
@@ -228,4 +228,50 @@ variable "github_token" {
   description = "GitHub OAuth token"
   type        = string
   sensitive   = true
+}
+
+# =====================
+# RDS Database Variables
+# =====================
+
+variable "rds_instance_class" {
+  description = "RDS instance class"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "rds_engine_version" {
+  description = "PostgreSQL engine version"
+  type        = string
+  default     = "15.7"
+}
+
+variable "rds_allocated_storage" {
+  description = "Initial allocated storage in GB"
+  type        = number
+  default     = 20
+}
+
+variable "rds_max_allocated_storage" {
+  description = "Maximum allocated storage for autoscaling in GB"
+  type        = number
+  default     = 100
+}
+
+variable "rds_multi_az" {
+  description = "Enable Multi-AZ deployment for high availability"
+  type        = bool
+  default     = true
+}
+
+variable "rds_backup_retention_period" {
+  description = "Number of days to retain backups"
+  type        = number
+  default     = 7
+}
+
+variable "rds_deletion_protection" {
+  description = "Enable deletion protection"
+  type        = bool
+  default     = true
 }

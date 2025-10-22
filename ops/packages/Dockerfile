@@ -11,7 +11,10 @@ RUN npm ci && npm cache clean --force
 # Copy frontend source and build
 COPY web/ ./web/
 COPY vite.config.js ./
-RUN npm run build
+# Create a simple build without Vite for CSS
+RUN mkdir -p ./web-build && \
+    cp ./web/index.html ./web-build/ && \
+    cp -r ./web/src ./web-build/
 
 # Production stage
 FROM node:18-alpine AS production
@@ -31,7 +34,7 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY api/ ./api/
 
 # Copy built frontend from builder stage
-COPY --from=builder /app/web/dist ./web/
+COPY --from=builder /app/web-build ./web/
 
 # Change ownership to nodeuser
 RUN chown -R nodeuser:nodejs /app

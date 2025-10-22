@@ -3,21 +3,48 @@ const Joi = require('joi');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
-// AWS X-Ray setup (optional)
+// AWS X-Ray setup (optional) - disabled for local development
 let AWSXRay;
-try {
-    AWSXRay = require('aws-xray-sdk-core');
-} catch (error) {
-    // Mock X-Ray for development
+if (process.env.DISABLE_XRAY !== 'true' && process.env.NODE_ENV === 'production') {
+    try {
+        AWSXRay = require('aws-xray-sdk-core');
+    } catch (error) {
+        console.log('X-Ray not available');
+    }
+}
+
+// Mock X-Ray for development to prevent errors
+if (!AWSXRay || process.env.DISABLE_XRAY === 'true') {
     AWSXRay = {
-        getSegment: () => ({
-            addNewSubsegment: () => ({
-                addAnnotation: () => { },
-                addError: () => { },
-                close: () => { }
-            })
-        })
+        getSegment: () => null
     };
+}
+
+// Helper function to safely create subsegments
+function createSubsegment(name) {
+    try {
+        const segment = AWSXRay.getSegment();
+        if (segment && segment.addNewSubsegment) {
+            return segment.addNewSubsegment(name);
+        }
+    } catch (error) {
+        // Ignore X-Ray errors
+    }
+    return null;
+}
+
+// Helper function to safely use subsegment
+function useSubsegment(subsegment, action) {
+    if (subsegment && typeof subsegment[action] === 'function') {
+        return (...args) => {
+            try {
+                return subsegment[action](...args);
+            } catch (error) {
+                // Ignore X-Ray errors
+            }
+        };
+    }
+    return () => { }; // No-op function
 }
 
 // In-memory product storage (in production, use DynamoDB/RDS)
@@ -66,8 +93,7 @@ const productSchema = Joi.object({
 
 // GET /api/products - Get all products
 router.get('/', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('get-products');
+    const subsegment = createSubsegment('get-products');
 
     try {
         const { category, minPrice, maxPrice, limit = 20, offset = 0 } = req.query;
@@ -94,8 +120,8 @@ router.get('/', (req, res) => {
         const endIndex = startIndex + parseInt(limit);
         const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
-        subsegment.addAnnotation('product_count', paginatedProducts.length);
-        subsegment.close();
+        useSubsegment(subsegment, 'addAnnotation')('product_count', paginatedProducts.length);
+        useSubsegment(subsegment, 'close')();
 
         res.json({
             data: paginatedProducts,
@@ -107,18 +133,25 @@ router.get('/', (req, res) => {
             }
         });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to fetch products' });
     }
 });
 
 // GET /api/products/:id - Get product by ID
 router.get('/:id', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('get-product-by-id');
+    let subsegment = null;
 
     try {
+        // Only use X-Ray if it's properly available
+        if (AWSXRay && AWSXRay.getSegment && typeof AWSXRay.getSegment === 'function') {
+            const segment = AWSXRay.getSegment();
+            if (segment && segment.addNewSubsegment) {
+                subsegment = segment.addNewSubsegment('get-product-by-id');
+            }
+        }
+
         const { id } = req.params;
         const product = products.find(p => p.id === id);
 

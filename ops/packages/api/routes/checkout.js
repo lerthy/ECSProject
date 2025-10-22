@@ -3,21 +3,49 @@ const Joi = require('joi');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
-// AWS X-Ray setup (optional)
+// AWS X-Ray setup (optional) - disabled for local development
 let AWSXRay;
-try {
-    AWSXRay = require('aws-xray-sdk-core');
-} catch (error) {
-    // Mock X-Ray for development
+if (process.env.DISABLE_XRAY !== 'true' && process.env.NODE_ENV === 'production') {
+    try {
+        AWSXRay = require('aws-xray-sdk-core');
+    } catch (error) {
+        console.log('X-Ray not available');
+    }
+}
+
+// Mock X-Ray for development to prevent errors
+if (!AWSXRay || process.env.DISABLE_XRAY === 'true') {
     AWSXRay = {
-        getSegment: () => ({
-            addNewSubsegment: () => ({
-                addAnnotation: () => { },
-                addError: () => { },
-                close: () => { }
-            })
-        })
+        getSegment: () => null
     };
+}
+
+// Helper function to safely create subsegments
+function createSubsegment(name) {
+    try {
+        const segment = AWSXRay.getSegment();
+        if (segment && segment.addNewSubsegment) {
+            return segment.addNewSubsegment(name);
+        }
+    } catch (error) {
+        // Ignore X-Ray errors
+    }
+    return null;
+}
+
+// Helper function to safely use subsegment
+function useSubsegment(subsegment, action) {
+    if (subsegment && typeof subsegment[action] === 'function') {
+        return (...args) => {
+            try {
+                return subsegment[action](...args);
+            } catch (error) {
+                // Ignore X-Ray errors
+                return null;
+            }
+        };
+    }
+    return (...args) => null; // No-op function that accepts any arguments
 }
 
 // In-memory orders storage (in production, use DynamoDB/RDS)
@@ -103,16 +131,15 @@ function processPayment() {
 
 // POST /api/checkout/:userId - Process checkout
 router.post('/:userId', async (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('process-checkout');
+    const subsegment = createSubsegment('process-checkout');
 
     try {
         const { userId } = req.params;
         const { error, value } = checkoutSchema.validate(req.body);
 
         if (error) {
-            subsegment.addAnnotation('validation_error', true);
-            subsegment.close();
+            useSubsegment(subsegment, 'addAnnotation')('validation_error', true);
+            useSubsegment(subsegment, 'close')();
             return res.status(400).json({
                 error: 'Validation failed',
                 details: error.details.map(d => d.message)
@@ -126,8 +153,8 @@ router.post('/:userId', async (req, res) => {
         const userCart = global.carts ? global.carts[userId] : null;
 
         if (!userCart || !userCart.items || userCart.items.length === 0) {
-            subsegment.addAnnotation('cart_empty', true);
-            subsegment.close();
+            useSubsegment(subsegment, 'addAnnotation')('cart_empty', true);
+            useSubsegment(subsegment, 'close')();
             return res.status(400).json({ error: 'Cart is empty' });
         }
 
@@ -135,12 +162,12 @@ router.post('/:userId', async (req, res) => {
         const totals = calculateOrderTotals(userCart.items);
 
         // Process payment
-        subsegment.addAnnotation('processing_payment', true);
+        useSubsegment(subsegment, 'addAnnotation')('processing_payment', true);
         const paymentResult = await processPayment();
 
         if (!paymentResult.success) {
-            subsegment.addAnnotation('payment_failed', true);
-            subsegment.close();
+            useSubsegment(subsegment, 'addAnnotation')('payment_failed', true);
+            useSubsegment(subsegment, 'close')();
             return res.status(400).json({
                 error: 'Payment failed',
                 message: paymentResult.message
@@ -178,26 +205,25 @@ router.post('/:userId', async (req, res) => {
             global.carts[userId].updatedAt = new Date().toISOString();
         }
 
-        subsegment.addAnnotation('order_created', true);
-        subsegment.addAnnotation('order_id', order.id);
-        subsegment.addAnnotation('order_total', totals.total);
-        subsegment.close();
+        useSubsegment(subsegment, 'addAnnotation')('order_created', true);
+        useSubsegment(subsegment, 'addAnnotation')('order_id', order.id);
+        useSubsegment(subsegment, 'addAnnotation')('order_total', totals.total);
+        useSubsegment(subsegment, 'close')();
 
         res.status(201).json({
             message: 'Order placed successfully',
             data: order
         });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to process checkout' });
     }
 });
 
 // GET /api/orders/:userId - Get user's orders
 router.get('/:userId', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('get-user-orders');
+    const subsegment = createSubsegment('get-user-orders');
 
     try {
         const { userId } = req.params;
@@ -218,9 +244,9 @@ router.get('/:userId', (req, res) => {
         const endIndex = startIndex + parseInt(limit);
         const paginatedOrders = userOrders.slice(startIndex, endIndex);
 
-        subsegment.addAnnotation('user_id', userId);
-        subsegment.addAnnotation('orders_count', paginatedOrders.length);
-        subsegment.close();
+        useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
+        useSubsegment(subsegment, 'addAnnotation')('orders_count', paginatedOrders.length);
+        useSubsegment(subsegment, 'close')();
 
         res.json({
             data: paginatedOrders,
@@ -232,43 +258,41 @@ router.get('/:userId', (req, res) => {
             }
         });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to fetch orders' });
     }
 });
 
 // GET /api/orders/order/:orderId - Get specific order details
 router.get('/order/:orderId', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('get-order-details');
+    const subsegment = createSubsegment('get-order-details');
 
     try {
         const { orderId } = req.params;
         const order = orders.find(o => o.id === orderId);
 
         if (!order) {
-            subsegment.addAnnotation('order_found', false);
-            subsegment.close();
+            useSubsegment(subsegment, 'addAnnotation')('order_found', false);
+            useSubsegment(subsegment, 'close')();
             return res.status(404).json({ error: 'Order not found' });
         }
 
-        subsegment.addAnnotation('order_found', true);
-        subsegment.addAnnotation('order_id', orderId);
-        subsegment.close();
+        useSubsegment(subsegment, 'addAnnotation')('order_found', true);
+        useSubsegment(subsegment, 'addAnnotation')('order_id', orderId);
+        useSubsegment(subsegment, 'close')();
 
         res.json({ data: order });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to fetch order details' });
     }
 });
 
 // PUT /api/orders/order/:orderId/status - Update order status (admin endpoint)
 router.put('/order/:orderId/status', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('update-order-status');
+    const subsegment = createSubsegment('update-order-status');
 
     try {
         const { orderId } = req.params;

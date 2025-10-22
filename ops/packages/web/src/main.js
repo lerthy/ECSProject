@@ -1,6 +1,3 @@
-// Import styles
-import './styles.css';
-
 // E-commerce Frontend Application
 class ECommerceApp {
     constructor() {

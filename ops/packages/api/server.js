@@ -49,7 +49,8 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-            scriptSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers
             fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
             imgSrc: ["'self'", "data:", "https:"],
         },

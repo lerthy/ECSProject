@@ -20,7 +20,15 @@ class DatabaseConnection {
 
     async getDbCredentials() {
         try {
-            // Get credentials from AWS Secrets Manager
+            // For local development, use environment variables directly
+            if (process.env.NODE_ENV === 'development' || process.env.DISABLE_AWS_SERVICES === 'true') {
+                return {
+                    username: process.env.DB_USER,
+                    password: process.env.DB_PASSWORD
+                };
+            }
+
+            // Get credentials from AWS Secrets Manager for production
             const secretArn = process.env.DB_SECRETS_ARN;
             if (!secretArn) {
                 throw new Error('DB_SECRETS_ARN environment variable not set');
@@ -92,8 +100,8 @@ class DatabaseConnection {
             throw new Error('Database not initialized. Call initialize() first.');
         }
 
-        const segment = AWSXRay ? AWSXRay.getSegment() : null;
-        const subsegment = segment ? segment.addNewSubsegment('postgres-query') : null;
+        const segment = AWSXRay && AWSXRay.getSegment ? AWSXRay.getSegment() : null;
+        const subsegment = segment && segment.addNewSubsegment ? segment.addNewSubsegment('postgres-query') : null;
 
         try {
             if (subsegment) {
@@ -131,8 +139,8 @@ class DatabaseConnection {
         }
 
         const client = await this.pool.connect();
-        const segment = AWSXRay ? AWSXRay.getSegment() : null;
-        const subsegment = segment ? segment.addNewSubsegment('postgres-transaction') : null;
+        const segment = AWSXRay && AWSXRay.getSegment ? AWSXRay.getSegment() : null;
+        const subsegment = segment && segment.addNewSubsegment ? segment.addNewSubsegment('postgres-transaction') : null;
 
         try {
             await client.query('BEGIN');

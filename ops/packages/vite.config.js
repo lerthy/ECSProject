@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-    root: 'frontend',
+    root: 'web',
     build: {
-        outDir: 'dist',
+        outDir: '../web-dist',
         emptyOutDir: true
     },
     server: {

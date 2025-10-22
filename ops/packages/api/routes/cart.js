@@ -3,21 +3,49 @@ const Joi = require('joi');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
-// AWS X-Ray setup (optional)
+// AWS X-Ray setup (optional) - disabled for local development
 let AWSXRay;
-try {
-    AWSXRay = require('aws-xray-sdk-core');
-} catch (error) {
-    // Mock X-Ray for development
+if (process.env.DISABLE_XRAY !== 'true' && process.env.NODE_ENV === 'production') {
+    try {
+        AWSXRay = require('aws-xray-sdk-core');
+    } catch (error) {
+        console.log('X-Ray not available');
+    }
+}
+
+// Mock X-Ray for development to prevent errors
+if (!AWSXRay || process.env.DISABLE_XRAY === 'true') {
     AWSXRay = {
-        getSegment: () => ({
-            addNewSubsegment: () => ({
-                addAnnotation: () => { },
-                addError: () => { },
-                close: () => { }
-            })
-        })
+        getSegment: () => null
     };
+}
+
+// Helper function to safely create subsegments
+function createSubsegment(name) {
+    try {
+        const segment = AWSXRay.getSegment();
+        if (segment && segment.addNewSubsegment) {
+            return segment.addNewSubsegment(name);
+        }
+    } catch (error) {
+        // Ignore X-Ray errors
+    }
+    return null;
+}
+
+// Helper function to safely use subsegment
+function useSubsegment(subsegment, action) {
+    if (subsegment && typeof subsegment[action] === 'function') {
+        return (...args) => {
+            try {
+                return subsegment[action](...args);
+            } catch (error) {
+                // Ignore X-Ray errors
+                return null;
+            }
+        };
+    }
+    return (...args) => null; // No-op function that accepts any arguments
 }
 
 // In-memory cart storage (in production, use DynamoDB/Redis)
@@ -52,8 +80,7 @@ function calculateCartTotals(cart) {
 
 // GET /api/cart/:userId - Get user's cart
 router.get('/:userId', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('get-cart');
+    const subsegment = createSubsegment('get-cart');
 
     try {
         const { userId } = req.params;
@@ -70,9 +97,9 @@ router.get('/:userId', (req, res) => {
         const cart = carts[userId];
         const totals = calculateCartTotals(cart);
 
-        subsegment.addAnnotation('user_id', userId);
-        subsegment.addAnnotation('cart_items_count', cart.items.length);
-        subsegment.close();
+        useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
+        useSubsegment(subsegment, 'addAnnotation')('cart_items_count', cart.items.length);
+        useSubsegment(subsegment, 'close')();
 
         res.json({
             data: {
@@ -81,16 +108,15 @@ router.get('/:userId', (req, res) => {
             }
         });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to fetch cart' });
     }
 });
 
 // POST /api/cart/:userId/items - Add item to cart
 router.post('/:userId/items', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('add-cart-item');
+    const subsegment = createSubsegment('add-cart-item');
 
     try {
         const { userId } = req.params;
@@ -142,10 +168,10 @@ router.post('/:userId/items', (req, res) => {
         cart.updatedAt = new Date().toISOString();
         const totals = calculateCartTotals(cart);
 
-        subsegment.addAnnotation('user_id', userId);
-        subsegment.addAnnotation('product_id', productId);
-        subsegment.addAnnotation('item_added', true);
-        subsegment.close();
+        useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
+        useSubsegment(subsegment, 'addAnnotation')('product_id', productId);
+        useSubsegment(subsegment, 'addAnnotation')('item_added', true);
+        useSubsegment(subsegment, 'close')();
 
         res.status(201).json({
             message: 'Item added to cart successfully',
@@ -155,24 +181,23 @@ router.post('/:userId/items', (req, res) => {
             }
         });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to add item to cart' });
     }
 });
 
 // PUT /api/cart/:userId/items/:itemId - Update cart item quantity
 router.put('/:userId/items/:itemId', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('update-cart-item');
+    const subsegment = createSubsegment('update-cart-item');
 
     try {
         const { userId, itemId } = req.params;
         const { error, value } = updateItemSchema.validate(req.body);
 
         if (error) {
-            subsegment.addAnnotation('validation_error', true);
-            subsegment.close();
+            useSubsegment(subsegment, 'addAnnotation')('validation_error', true);
+            useSubsegment(subsegment, 'close')();
             return res.status(400).json({
                 error: 'Validation failed',
                 details: error.details.map(d => d.message)
@@ -182,8 +207,8 @@ router.put('/:userId/items/:itemId', (req, res) => {
         const { quantity } = value;
 
         if (!carts[userId]) {
-            subsegment.addAnnotation('cart_found', false);
-            subsegment.close();
+            useSubsegment(subsegment, 'addAnnotation')('cart_found', false);
+            useSubsegment(subsegment, 'close')();
             return res.status(404).json({ error: 'Cart not found' });
         }
 
@@ -191,8 +216,8 @@ router.put('/:userId/items/:itemId', (req, res) => {
         const itemIndex = cart.items.findIndex(item => item.id === itemId);
 
         if (itemIndex === -1) {
-            subsegment.addAnnotation('item_found', false);
-            subsegment.close();
+            useSubsegment(subsegment, 'addAnnotation')('item_found', false);
+            useSubsegment(subsegment, 'close')();
             return res.status(404).json({ error: 'Item not found in cart' });
         }
 
@@ -202,10 +227,10 @@ router.put('/:userId/items/:itemId', (req, res) => {
 
         const totals = calculateCartTotals(cart);
 
-        subsegment.addAnnotation('user_id', userId);
-        subsegment.addAnnotation('item_id', itemId);
-        subsegment.addAnnotation('item_updated', true);
-        subsegment.close();
+        useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
+        useSubsegment(subsegment, 'addAnnotation')('item_id', itemId);
+        useSubsegment(subsegment, 'addAnnotation')('item_updated', true);
+        useSubsegment(subsegment, 'close')();
 
         res.json({
             message: 'Cart item updated successfully',
@@ -215,23 +240,22 @@ router.put('/:userId/items/:itemId', (req, res) => {
             }
         });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to update cart item' });
     }
 });
 
 // DELETE /api/cart/:userId/items/:itemId - Remove item from cart
 router.delete('/:userId/items/:itemId', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('remove-cart-item');
+    const subsegment = createSubsegment('remove-cart-item');
 
     try {
         const { userId, itemId } = req.params;
 
         if (!carts[userId]) {
-            subsegment.addAnnotation('cart_found', false);
-            subsegment.close();
+            useSubsegment(subsegment, 'addAnnotation')('cart_found', false);
+            useSubsegment(subsegment, 'close')();
             return res.status(404).json({ error: 'Cart not found' });
         }
 
@@ -239,8 +263,8 @@ router.delete('/:userId/items/:itemId', (req, res) => {
         const itemIndex = cart.items.findIndex(item => item.id === itemId);
 
         if (itemIndex === -1) {
-            subsegment.addAnnotation('item_found', false);
-            subsegment.close();
+            useSubsegment(subsegment, 'addAnnotation')('item_found', false);
+            useSubsegment(subsegment, 'close')();
             return res.status(404).json({ error: 'Item not found in cart' });
         }
 
@@ -249,10 +273,10 @@ router.delete('/:userId/items/:itemId', (req, res) => {
 
         const totals = calculateCartTotals(cart);
 
-        subsegment.addAnnotation('user_id', userId);
-        subsegment.addAnnotation('item_id', itemId);
-        subsegment.addAnnotation('item_removed', true);
-        subsegment.close();
+        useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
+        useSubsegment(subsegment, 'addAnnotation')('item_id', itemId);
+        useSubsegment(subsegment, 'addAnnotation')('item_removed', true);
+        useSubsegment(subsegment, 'close')();
 
         res.json({
             message: 'Item removed from cart successfully',
@@ -262,23 +286,22 @@ router.delete('/:userId/items/:itemId', (req, res) => {
             }
         });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to remove cart item' });
     }
 });
 
 // DELETE /api/cart/:userId - Clear entire cart
 router.delete('/:userId', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('clear-cart');
+    const subsegment = createSubsegment('clear-cart');
 
     try {
         const { userId } = req.params;
 
         if (!carts[userId]) {
-            subsegment.addAnnotation('cart_found', false);
-            subsegment.close();
+            useSubsegment(subsegment, 'addAnnotation')('cart_found', false);
+            useSubsegment(subsegment, 'close')();
             return res.status(404).json({ error: 'Cart not found' });
         }
 
@@ -287,9 +310,9 @@ router.delete('/:userId', (req, res) => {
 
         const totals = calculateCartTotals(carts[userId]);
 
-        subsegment.addAnnotation('user_id', userId);
-        subsegment.addAnnotation('cart_cleared', true);
-        subsegment.close();
+        useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
+        useSubsegment(subsegment, 'addAnnotation')('cart_cleared', true);
+        useSubsegment(subsegment, 'close')();
 
         res.json({
             message: 'Cart cleared successfully',
@@ -299,8 +322,8 @@ router.delete('/:userId', (req, res) => {
             }
         });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to clear cart' });
     }
 });

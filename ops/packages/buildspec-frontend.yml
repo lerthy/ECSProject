@@ -35,7 +35,7 @@ phases:
 
   post_build:
     commands:
-      - echo Frontend deployment completed on `date`
+      - echo "Frontend deployment completed on $(date)"
       - echo Verifying deployment...
       - sleep 30
       - curl -f https://$CLOUDFRONT_DOMAIN || echo "Frontend health check failed, but continuing..."

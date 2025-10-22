@@ -8,8 +8,7 @@ env:
 phases:
   install:
     runtime-versions:
-      nodejs: 18
-      docker: 20
+      nodejs: 20
     commands:
       - echo Installing backend dependencies...
       - cd ops/packages/api

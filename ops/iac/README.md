@@ -40,7 +40,7 @@ This repository contains production-grade, modular Terraform code to deploy an E
   - `README.md` — Development environment setup guide
 
 ### Build Configuration
-- `buildspec-terraform.yml` — AWS CodeBuild specification for Terraform operations
+- Build specifications are located in `../cicd/` directory
 
 ## Deployment Steps
 
@@ -60,8 +60,8 @@ This repository contains production-grade, modular Terraform code to deploy an E
 
 5. **CI/CD Pipeline**
    - The `modules/cicd/` contains CI/CD pipeline infrastructure
-   - The `buildspec-terraform.yml` defines AWS CodeBuild steps for Terraform operations
-   - See `../packages/buildspec-frontend.yml` and `../packages/buildspec-backend.yml` for application build specifications
+   - The CI/CD buildspec files are located in `../cicd/`
+   - See `../cicd/buildspec-terraform.yml`, `../cicd/buildspec-frontend.yml` and `../cicd/buildspec-backend.yml` for build specifications
 
 ## Outputs
 - ALB DNS name and ARN

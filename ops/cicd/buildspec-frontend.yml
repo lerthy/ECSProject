@@ -7,10 +7,10 @@ env:
 phases:
   install:
     runtime-versions:
-      nodejs: 18
+      nodejs: 20
     commands:
       - echo Installing frontend dependencies...
-      - cd ops/packages/web
+      - cd ops/packages
       - npm ci
 
   pre_build:
@@ -23,12 +23,12 @@ phases:
       - echo Building frontend with Vite...
       - npm run build
       - echo Verifying build artifacts...
-      - ls -la dist/
+      - ls -la web-dist/
 
   build:
     commands:
       - echo Syncing frontend assets to S3...
-      - aws s3 sync ./dist s3://$FRONTEND_BUCKET --delete --cache-control "public, max-age=31536000"
+      - aws s3 sync ./web-dist s3://$FRONTEND_BUCKET --delete --cache-control "public, max-age=31536000"
       - echo Creating CloudFront invalidation...
       - >
         INVALIDATION_ID=$(aws cloudfront create-invalidation 
@@ -47,14 +47,14 @@ phases:
 
 artifacts:
   files:
-    - ops/packages/web/dist/**/*
-    - ops/packages/web/coverage/**/*
+    - ops/packages/web-dist/**/*
+    - ops/packages/coverage/**/*
   name: frontend-artifacts
 
 reports:
   jest-reports:
     files:
-      - ops/packages/web/coverage/lcov.info
+      - ops/packages/coverage/lcov.info
     file-format: 'CLOVERXML'
 
 cache:

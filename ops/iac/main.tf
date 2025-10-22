@@ -223,7 +223,7 @@ module "monitoring_alarms" {
 }
 
 module "cicd" {
-  source                     = "./modules/cicd"
+  source                     = "./modules/codebuild"
   github_owner               = var.github_owner
   github_repo                = var.github_repo
   github_branch              = var.github_branch

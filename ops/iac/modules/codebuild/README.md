@@ -99,9 +99,9 @@ module "cicd" {
 
 The module expects the following buildspec files in your repository:
 
-- `ops/iac/buildspec-terraform.yml` - For Terraform operations
-- `ops/packages/buildspec-frontend.yml` - For frontend web application build and deployment
-- `ops/packages/buildspec-backend.yml` - For backend API build and deployment
+- `ops/cicd/buildspec-terraform.yml` - For Terraform operations
+- `ops/cicd/buildspec-frontend.yml` - For frontend web application build and deployment
+- `ops/cicd/buildspec-backend.yml` - For backend API build and deployment
 
 ## IAM Permissions
 

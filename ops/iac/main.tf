@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 3.0"
+    }
+  }
+}
+
 provider "aws" {
   region = var.region
 }
@@ -128,7 +137,7 @@ module "ecs" {
   tags                  = var.tags
   cpu                   = var.cpu
   memory                = var.memory
-  container_definitions = data.template_file.container_definition.rendered
+  container_definitions = local.container_definition
   desired_count         = var.desired_count
   private_subnet_ids    = module.vpc.private_subnet_ids
   security_group_ids    = [module.vpc.ecs_security_group_id]
@@ -144,7 +153,7 @@ module "ecs_standby" {
   tags                  = var.tags
   cpu                   = var.cpu
   memory                = var.memory
-  container_definitions = data.template_file.container_definition_standby.rendered
+  container_definitions = local.container_definition_standby
   desired_count         = 1 # Minimal standby
   private_subnet_ids    = module.vpc.private_subnet_ids
   security_group_ids    = [module.vpc.ecs_security_group_id]
@@ -223,7 +232,7 @@ module "monitoring_alarms" {
 }
 
 module "cicd" {
-  source                     = "./modules/cicd"
+  source                     = "../iac/cicd"
   github_owner               = var.github_owner
   github_repo                = var.github_repo
   github_branch              = var.github_branch

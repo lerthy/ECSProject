@@ -6,8 +6,8 @@ This module creates a complete CI/CD pipeline using AWS CodePipeline and CodeBui
 
 - **CodePipeline**: Main pipeline orchestrating the build and deployment process
 - **CodeBuild Projects**: 
-  - Terraform project for infrastructure deployment
-  - Web App project for application build and deployment
+	- Terraform project for infrastructure deployment
+	- Web App project for application build and deployment
 - **S3 Bucket**: Artifact storage for pipeline
 - **IAM Roles**: Service roles for CodePipeline and CodeBuild with appropriate permissions
 
@@ -31,32 +31,32 @@ If you're not the original repository owner, you'll need to:
 
 ```hcl
 module "cicd" {
-  source = "./modules/cicd"
+		source = "../iac/cicd"
 
-  # GitHub Configuration (use your own GitHub account)
-  github_owner    = "your-github-username"  # Your GitHub username (not the original repo owner)
-  github_repo     = "ECSProject"            # Repository name (can be your fork)
-  github_branch   = "main"                  # Branch to build from
-  github_token    = var.github_token        # Your GitHub personal access token
+	# GitHub Configuration (use your own GitHub account)
+	github_owner    = "your-github-username"  # Your GitHub username (not the original repo owner)
+	github_repo     = "ECSProject"            # Repository name (can be your fork)
+	github_branch   = "main"                  # Branch to build from
+	github_token    = var.github_token        # Your GitHub personal access token
 
-  # Terraform backend configuration
-  terraform_state_bucket = "your-terraform-state-bucket"
-  terraform_state_key    = "state/terraform.tfstate"
+	# Terraform backend configuration
+	terraform_state_bucket = "your-terraform-state-bucket"
+	terraform_state_key    = "state/terraform.tfstate"
 
-  # Application configuration
-  ecr_repository_url         = module.ecr.repository_url
-  ecs_cluster_name          = module.ecs.cluster_name
-  ecs_service_name          = module.ecs.service_name
-  frontend_bucket_name      = module.s3.frontend_bucket_name
-  cloudfront_distribution_id = module.cloudfront.distribution_id
-  alb_name                  = module.alb.name
-  app_health_url            = "https://your-app-domain.com"
-  # Optional
-  sns_topic_arn = module.sns.topic_arn
-  tags = {
-    Environment = "dev"
-    Project     = "ecommerce"
-  }
+	# Application configuration
+	ecr_repository_url         = module.ecr.repository_url
+	ecs_cluster_name          = module.ecs.cluster_name
+	ecs_service_name          = module.ecs.service_name
+	frontend_bucket_name      = module.s3.frontend_bucket_name
+	cloudfront_distribution_id = module.cloudfront.distribution_id
+	alb_name                  = module.alb.name
+	app_health_url            = "https://your-app-domain.com"
+	# Optional
+	sns_topic_arn = module.sns.topic_arn
+	tags = {
+		Environment = "dev"
+		Project     = "ecommerce"
+	}
 }
 ```
 
@@ -109,10 +109,10 @@ The module creates comprehensive IAM roles with permissions for:
 
 - **CodePipeline**: S3 access for artifacts, CodeBuild project execution, SNS publishing
 - **CodeBuild**: 
-  - AWS service access (EC2, ECS, ECR, ELB, Route53, CloudFront, S3, IAM, etc.)
-  - Terraform state management (S3, DynamoDB)
-  - Docker operations and ECR push/pull
-  - Application deployment and health checks
+	- AWS service access (EC2, ECS, ECR, ELB, Route53, CloudFront, S3, IAM, etc.)
+	- Terraform state management (S3, DynamoDB)
+	- Docker operations and ECR push/pull
+	- Application deployment and health checks
 
 ## Security Features
 
@@ -127,10 +127,10 @@ For contributors using their own GitHub account:
 
 1. Go to GitHub Settings > Developer settings > Personal access tokens
 2. Generate a new token with these permissions:
-   - `repo` (Full control of private repositories)
-   - `admin:repo_hook` (Read and write repository hooks)
+	 - `repo` (Full control of private repositories)
+	 - `admin:repo_hook` (Read and write repository hooks)
 3. Set the token as an environment variable:
-   ```bash
-   export TF_VAR_github_token="your_github_token_here"
-   ```
+	 ```bash
+	 export TF_VAR_github_token="your_github_token_here"
+	 ```
 4. Or store it in AWS Secrets Manager and reference it in your configuration

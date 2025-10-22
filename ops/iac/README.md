@@ -59,7 +59,7 @@ This repository contains production-grade, modular Terraform code to deploy an E
    - `terraform apply`
 
 5. **CI/CD Pipeline**
-   - The `modules/cicd/` contains CI/CD pipeline infrastructure
+   - The `cicd/` folder contains CI/CD pipeline infrastructure
    - The `buildspec-terraform.yml` defines AWS CodeBuild steps for Terraform operations
    - See `../packages/buildspec-frontend.yml` and `../packages/buildspec-backend.yml` for application build specifications
 

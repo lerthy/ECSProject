@@ -49,9 +49,9 @@ phases:
   post_build:
     commands:
       - echo "Terraform operations completed on $(date)"
-      - echo Infrastructure deployment summary:
+      - echo "Infrastructure deployment summary:"
       - terraform output
-      - echo Cleaning up temporary files...
+      - echo "Cleaning up temporary files..."
       - rm -f tfplan
 
 artifacts:

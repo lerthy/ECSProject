@@ -1,40 +1,56 @@
-# Cost Optimization: S3 Lifecycle, Fargate Spot, Tagging
+# Cost Optimization Configuration
+# Added per best practices for operational excellence
 
-# S3 Lifecycle for log storage
-resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
-  bucket = module.s3.alb_logs_bucket_name
-  rule {
-    id     = "log-expiry"
-    status = "Enabled"
-    expiration {
-      days = 90
-    }
+# S3 Intelligent Tiering for cost optimization
+resource "aws_s3_bucket_intelligent_tiering_configuration" "frontend" {
+  bucket = module.s3.frontend_bucket_name
+  name   = "EntireBucket"
+  
+  tiering {
+    access_tier = "ARCHIVE_ACCESS"
+    days        = 90
+  }
+  
+  tiering {
+    access_tier = "DEEP_ARCHIVE_ACCESS"
+    days        = 180
   }
 }
 
-# Fargate Spot for ECS
-resource "aws_ecs_service" "api_spot" {
-  count           = 0 # Example: set to 1 to enable spot
-  name            = "${var.ecs_name}-spot"
-  cluster         = module.ecs.cluster_id
-  task_definition = module.ecs.task_definition_arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-  capacity_provider_strategy {
-    capacity_provider = "FARGATE_SPOT"
-    weight            = 1
-  }
-  network_configuration {
-    subnets          = module.vpc.private_subnet_ids
-    security_groups  = [module.vpc.nat_gateway_id] # Replace with actual SGs
-    assign_public_ip = false
-  }
-  load_balancer {
-    target_group_arn = module.alb.target_group_arn
-    container_name   = var.container_name
-    container_port   = var.container_port
-  }
+# S3 Transfer Acceleration for performance and cost optimization
+resource "aws_s3_bucket_accelerate_configuration" "frontend" {
+  bucket = module.s3.frontend_bucket_name
+  status = "Enabled"
+}
+
+# CloudWatch Cost Anomaly Detection
+resource "aws_ce_anomaly_detector" "cost_anomaly" {
+  name = "cost-anomaly-detector"
+  
+  specification = jsonencode({
+    threshold = 100.0
+    type      = "ANOMALY_DETECTION"
+  })
+  
   tags = var.tags
 }
 
-# Tagging and right-sizing are handled via variables and tags in all modules
+# Cost and Usage Report
+resource "aws_cur_report_definition" "cost_report" {
+  report_name                = "cost-and-usage-report"
+  time_unit                 = "DAILY"
+  format                    = "textORcsv"
+  compression              = "GZIP"
+  additional_schema_elements = ["RESOURCES"]
+  s3_bucket                = module.s3.alb_logs_bucket_name
+  s3_prefix                = "cost-reports/"
+  s3_region               = data.aws_region.current.name
+  
+  additional_artifacts = [
+    "REDSHIFT",
+    "QUICKSIGHT"
+  ]
+}
+
+# Data source for current region
+data "aws_region" "current" {}

@@ -1,3 +1,60 @@
+# S3 replication variables (root)
+variable "enable_s3_replication" {
+  description = "Enable S3 cross-region replication from us-east-1 to eu-north-1"
+  type        = bool
+  default     = false
+}
+variable "replication_destination_bucket_arn" {
+  description = "Destination S3 bucket ARN in eu-north-1 for replication"
+  type        = string
+  default     = ""
+}
+# Cross-region RDS replica/standby variables
+variable "create_cross_region_replica" {
+  description = "Whether to create a cross-region RDS replica (for DR region)"
+  type        = bool
+  default     = false
+}
+variable "replicate_source_db" {
+  description = "ARN or identifier of the source DB for cross-region replica"
+  type        = string
+  default     = ""
+}
+# DMS variables for cross-region replication
+variable "rds_source_username" {
+  description = "Username for source RDS DB (us-east-1)"
+  type        = string
+}
+variable "rds_source_password" {
+  description = "Password for source RDS DB (us-east-1)"
+  type        = string
+  sensitive   = true
+}
+variable "rds_source_endpoint" {
+  description = "Endpoint for source RDS DB (us-east-1)"
+  type        = string
+}
+variable "rds_source_db_name" {
+  description = "Database name for source RDS DB (us-east-1)"
+  type        = string
+}
+variable "rds_target_username" {
+  description = "Username for target RDS DB (eu-north-1)"
+  type        = string
+}
+variable "rds_target_password" {
+  description = "Password for target RDS DB (eu-north-1)"
+  type        = string
+  sensitive   = true
+}
+variable "rds_target_endpoint" {
+  description = "Endpoint for target RDS DB (eu-north-1)"
+  type        = string
+}
+variable "rds_target_db_name" {
+  description = "Database name for target RDS DB (eu-north-1)"
+  type        = string
+}
 # Optional: CloudFront aliases
 variable "aliases" {
   description = "CloudFront distribution aliases"
@@ -47,6 +104,12 @@ variable "sns_alert_email" {
   description = "Email address for SNS alerts"
   type        = string
   default     = "dev-alerts@example.com"
+  
+  # Added variable validation per best practices
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.sns_alert_email))
+    error_message = "Email address must be a valid email format."
+  }
 }
 # CloudWatch dashboard and alarm variables
 variable "dashboard_body" {
@@ -58,7 +121,13 @@ variable "dashboard_body" {
 variable "environment" {
   description = "Environment name (e.g., dev, prod, staging)"
   type        = string
-  default     = "dev-placeholder"
+  default     = "dev"
+  
+  # Added variable validation per best practices
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be one of: dev, staging, prod."
+  }
 }
 
 variable "ecs_cpu_threshold" {
@@ -70,7 +139,8 @@ variable "ecs_cpu_threshold" {
 variable "app_secret_string" {
   description = "Secret string for application (example)"
   type        = string
-  default     = "dev-placeholder"
+  sensitive   = true
+  default     = ""
 }
 variable "region" {
   description = "AWS region"
@@ -91,6 +161,12 @@ variable "vpc_name" {
 variable "vpc_cidr_block" {
   description = "VPC CIDR block"
   type        = string
+  
+  # Added variable validation per best practices
+  validation {
+    condition     = can(cidrhost(var.vpc_cidr_block, 0))
+    error_message = "VPC CIDR block must be a valid IPv4 CIDR block."
+  }
 }
 variable "public_subnets" {
   description = "List of public subnet CIDRs"
@@ -107,6 +183,45 @@ variable "db_subnets" {
 variable "azs" {
   description = "List of availability zones"
   type        = list(string)
+}
+
+# DR (eu-north-1) variables
+variable "vpc_name_dr" {
+  description = "Name prefix for VPC in eu-north-1 (DR region)"
+  type        = string
+}
+variable "vpc_cidr_block_dr" {
+  description = "VPC CIDR block for eu-north-1 (DR region)"
+  type        = string
+}
+variable "public_subnets_dr" {
+  description = "List of public subnet CIDRs for eu-north-1 (DR region)"
+  type        = list(string)
+}
+variable "private_subnets_dr" {
+  description = "List of private subnet CIDRs for eu-north-1 (DR region)"
+  type        = list(string)
+}
+variable "db_subnets_dr" {
+  description = "List of database subnet CIDRs for eu-north-1 (DR region)"
+  type        = list(string)
+}
+variable "azs_dr" {
+  description = "List of availability zones for eu-north-1 (DR region)"
+  type        = list(string)
+}
+
+variable "frontend_bucket_name_dr" {
+  description = "Name for frontend S3 bucket in eu-north-1 (DR region)"
+  type        = string
+}
+variable "alb_logs_bucket_name_dr" {
+  description = "Name for ALB logs S3 bucket in eu-north-1 (DR region)"
+  type        = string
+}
+variable "cloudfront_logs_bucket_name_dr" {
+  description = "Name for CloudFront logs S3 bucket in eu-north-1 (DR region)"
+  type        = string
 }
 
 # S3

@@ -58,6 +58,17 @@ resource "aws_iam_role_policy" "codepipeline" {
 					"sns:Publish"
 				]
 				Resource = var.sns_topic_arn != "" ? [var.sns_topic_arn] : []
+			},
+			{
+				Effect = "Allow"
+				Action = [
+					"codepipeline:GetPipeline",
+					"codepipeline:GetPipelineState",
+					"codepipeline:GetPipelineExecution",
+					"codepipeline:ListPipelineExecutions",
+					"codepipeline:PutApprovalResult"
+				]
+				Resource = "*"
 			}
 		]
 	})
@@ -184,22 +195,136 @@ resource "aws_iam_role_policy" "codebuild" {
 					"arn:aws:s3:::${var.terraform_state_bucket}/*"
 				]
 			},
+			# Restricted IAM permissions per best practices - least privilege access
 			{
 				Effect = "Allow"
 				Action = [
-					"ec2:*",
-					"ecs:*",
-					"ecr:*",
-					"elbv2:*",
-					"route53:*",
-					"cloudfront:*",
-					"s3:*",
-					"iam:*",
-					"logs:*",
-					"sns:*",
-					"cloudwatch:*",
-					"application-autoscaling:*",
-					"xray:*"
+					"ec2:DescribeVpcs",
+					"ec2:DescribeSubnets",
+					"ec2:DescribeSecurityGroups",
+					"ec2:DescribeAvailabilityZones",
+					"ec2:DescribeInstances"
+				]
+				Resource = "*"
+			},
+			{
+				Effect = "Allow"
+				Action = [
+					"ecs:UpdateService",
+					"ecs:DescribeServices",
+					"ecs:DescribeClusters",
+					"ecs:ListTasks",
+					"ecs:DescribeTasks",
+					"ecs:RunTask",
+					"ecs:StopTask"
+				]
+				Resource = "*"
+			},
+			{
+				Effect = "Allow"
+				Action = [
+					"ecr:GetAuthorizationToken",
+					"ecr:BatchCheckLayerAvailability",
+					"ecr:GetDownloadUrlForLayer",
+					"ecr:BatchGetImage",
+					"ecr:PutImage",
+					"ecr:InitiateLayerUpload",
+					"ecr:UploadLayerPart",
+					"ecr:CompleteLayerUpload"
+				]
+				Resource = "*"
+			},
+			{
+				Effect = "Allow"
+				Action = [
+					"elbv2:DescribeLoadBalancers",
+					"elbv2:DescribeTargetGroups",
+					"elbv2:DescribeTargetHealth",
+					"elbv2:ModifyTargetGroup"
+				]
+				Resource = "*"
+			},
+			{
+				Effect = "Allow"
+				Action = [
+					"route53:GetChange",
+					"route53:ListHostedZones",
+					"route53:GetHostedZone",
+					"route53:ChangeResourceRecordSets"
+				]
+				Resource = "*"
+			},
+			{
+				Effect = "Allow"
+				Action = [
+					"cloudfront:CreateInvalidation",
+					"cloudfront:GetInvalidation",
+					"cloudfront:ListInvalidations",
+					"cloudfront:GetDistribution",
+					"cloudfront:ListDistributions"
+				]
+				Resource = "*"
+			},
+			{
+				Effect = "Allow"
+				Action = [
+					"s3:GetObject",
+					"s3:PutObject",
+					"s3:DeleteObject",
+					"s3:ListBucket",
+					"s3:GetBucketLocation",
+					"s3:GetBucketVersioning",
+					"s3:PutObjectAcl"
+				]
+				Resource = [
+					"arn:aws:s3:::${var.frontend_bucket_name}",
+					"arn:aws:s3:::${var.frontend_bucket_name}/*",
+					"arn:aws:s3:::${var.terraform_state_bucket}",
+					"arn:aws:s3:::${var.terraform_state_bucket}/*"
+				]
+			},
+			{
+				Effect = "Allow"
+				Action = [
+					"logs:CreateLogGroup",
+					"logs:CreateLogStream",
+					"logs:PutLogEvents",
+					"logs:DescribeLogGroups",
+					"logs:DescribeLogStreams"
+				]
+				Resource = "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/*"
+			},
+			{
+				Effect = "Allow"
+				Action = [
+					"sns:Publish"
+				]
+				Resource = var.sns_topic_arn != "" ? [var.sns_topic_arn] : []
+			},
+			{
+				Effect = "Allow"
+				Action = [
+					"cloudwatch:PutMetricData",
+					"cloudwatch:GetMetricStatistics",
+					"cloudwatch:ListMetrics"
+				]
+				Resource = "*"
+			},
+			{
+				Effect = "Allow"
+				Action = [
+					"application-autoscaling:DescribeScalableTargets",
+					"application-autoscaling:DescribeScalingPolicies",
+					"application-autoscaling:RegisterScalableTarget",
+					"application-autoscaling:PutScalingPolicy"
+				]
+				Resource = "*"
+			},
+			{
+				Effect = "Allow"
+				Action = [
+					"xray:PutTraceSegments",
+					"xray:PutTelemetryRecords"
 				]
 				Resource = "*"
 			}

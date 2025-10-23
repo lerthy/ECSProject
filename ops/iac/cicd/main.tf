@@ -78,7 +78,32 @@ resource "aws_codebuild_project" "terraform" {
 
 	source {
 		type      = "CODEPIPELINE"
-		buildspec = "ops/iac/buildspec-terraform.yml"
+		buildspec = "buildspec-terraform.yml"
+	}
+
+	tags = var.tags
+}
+
+# Added security scanning project per best practices
+resource "aws_codebuild_project" "security_scan" {
+	name         = "ecommerce-security-scan"
+	description  = "Security scanning for infrastructure code"
+	service_role = aws_iam_role.codebuild.arn
+
+	artifacts {
+		type = "CODEPIPELINE"
+	}
+
+	environment {
+		compute_type                = "BUILD_GENERAL1_SMALL"
+		image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
+		type                        = "LINUX_CONTAINER"
+		image_pull_credentials_type = "CODEBUILD"
+	}
+
+	source {
+		type      = "CODEPIPELINE"
+		buildspec = "buildspec-security-scan.yml"
 	}
 
 	tags = var.tags
@@ -232,6 +257,41 @@ resource "aws_codepipeline" "terraform" {
 		}
 	}
 
+	# Added security scanning stage per best practices
+	stage {
+		name = "SecurityScan"
+
+		action {
+			name             = "SecurityScan"
+			category         = "Build"
+			owner            = "AWS"
+			provider         = "CodeBuild"
+			input_artifacts  = ["terraform_source"]
+			output_artifacts = ["security_scan_results"]
+			version          = "1"
+
+			configuration = {
+				ProjectName = aws_codebuild_project.security_scan.name
+			}
+		}
+	}
+
+	stage {
+		name = "Approval"
+
+		action {
+			name     = "ManualApproval"
+			category = "Approval"
+			owner    = "AWS"
+			provider = "Manual"
+			version  = "1"
+
+			configuration = {
+				CustomData = "Please review the Terraform plan and approve the infrastructure changes. Check the plan output in the previous stage for any unexpected modifications."
+			}
+		}
+	}
+
 	stage {
 		name = "Apply"
 
@@ -306,6 +366,45 @@ resource "aws_codepipeline" "frontend" {
 		}
 	}
 
+	stage {
+		name = "Approval"
+
+		action {
+			name     = "FrontendDeploymentApproval"
+			category = "Approval"
+			owner    = "AWS"
+			provider = "Manual"
+			version  = "1"
+
+			configuration = {
+				CustomData = "Please review the frontend build and approve the deployment to S3/CloudFront. Verify that the static assets have been built successfully and are ready for production."
+			}
+		}
+	}
+
+	stage {
+		name = "Deploy"
+
+		action {
+			name            = "FrontendDeploy"
+			category        = "Build"
+			owner           = "AWS"
+			provider        = "CodeBuild"
+			input_artifacts = ["frontend_build"]
+			version         = "1"
+
+			configuration = {
+				ProjectName = aws_codebuild_project.frontend.name
+				EnvironmentVariables = jsonencode([
+					{
+						name  = "DEPLOYMENT_ACTION"
+						value = "deploy"
+					}
+				])
+			}
+		}
+	}
+
 	tags = var.tags
 }
 
@@ -353,6 +452,45 @@ resource "aws_codepipeline" "backend" {
 
 			configuration = {
 				ProjectName = aws_codebuild_project.backend.name
+			}
+		}
+	}
+
+	stage {
+		name = "Approval"
+
+		action {
+			name     = "DeploymentApproval"
+			category = "Approval"
+			owner    = "AWS"
+			provider = "Manual"
+			version  = "1"
+
+			configuration = {
+				CustomData = "Please review the application build and approve the deployment to ECS. Verify that the Docker image has been built successfully and security scans have passed."
+			}
+		}
+	}
+
+	stage {
+		name = "Deploy"
+
+		action {
+			name            = "BackendDeploy"
+			category        = "Build"
+			owner           = "AWS"
+			provider        = "CodeBuild"
+			input_artifacts = ["backend_build"]
+			version         = "1"
+
+			configuration = {
+				ProjectName = aws_codebuild_project.backend.name
+				EnvironmentVariables = jsonencode([
+					{
+						name  = "DEPLOYMENT_ACTION"
+						value = "deploy"
+					}
+				])
 			}
 		}
 	}

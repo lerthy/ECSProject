@@ -1,3 +1,14 @@
+# For cross-region replica/standby
+variable "create_cross_region_replica" {
+  description = "Whether to create a cross-region RDS replica (for DR region)"
+  type        = bool
+  default     = false
+}
+variable "replicate_source_db" {
+  description = "ARN or identifier of the source DB for cross-region replica"
+  type        = string
+  default     = ""
+}
 # RDS Module Variables
 
 variable "name" {

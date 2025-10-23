@@ -36,6 +36,69 @@ resource "aws_iam_role_policy_attachment" "ecs_s3_logs_access" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
 }
 
+# IAM policy for Secrets Manager access
+resource "aws_iam_role_policy" "ecs_secrets_manager" {
+  name = "${var.name}-ecs-secrets-manager"
+  role = aws_iam_role.ecs_task_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = [
+          "arn:aws:secretsmanager:*:*:secret:*rds-credentials*"
+        ]
+      }
+    ]
+  })
+}
+
+# IAM policy for X-Ray tracing
+resource "aws_iam_role_policy" "ecs_xray" {
+  name = "${var.name}-ecs-xray"
+  role = aws_iam_role.ecs_task_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "xray:PutTraceSegments",
+          "xray:PutTelemetryRecords"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# IAM policy for CloudWatch custom metrics
+resource "aws_iam_role_policy" "ecs_cloudwatch" {
+  name = "${var.name}-ecs-cloudwatch"
+  role = aws_iam_role.ecs_task_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricData",
+          "cloudwatch:GetMetricStatistics",
+          "cloudwatch:ListMetrics"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 resource "aws_ecs_task_definition" "api" {
   family                   = "${var.name}-api"
   network_mode             = "awsvpc"

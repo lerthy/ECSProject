@@ -40,10 +40,15 @@ phases:
       - echo Pushing Docker images to ECR...
       - docker push $ECR_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - docker push $ECR_REPO:latest
-      - echo Updating ECS service with new image...
-      - aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
-      - echo Waiting for service to stabilize...
-      - aws ecs wait services-stable --cluster $ECS_CLUSTER --services $ECS_SERVICE
+      - |
+        if [ "$DEPLOYMENT_ACTION" = "deploy" ]; then
+          echo Updating ECS service with new image...
+          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
+          echo Waiting for service to stabilize...
+          aws ecs wait services-stable --cluster $ECS_CLUSTER --services $ECS_SERVICE
+        else
+          echo Build completed. Waiting for manual approval for deployment...
+        fi
 
   post_build:
     commands:

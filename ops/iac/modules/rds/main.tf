@@ -1,3 +1,30 @@
+# Cross-region replica/standby (for DR region)
+resource "aws_db_instance" "cross_region_replica" {
+  count = var.create_cross_region_replica ? 1 : 0
+
+  identifier = "${var.name}-cross-region-replica"
+  replicate_source_db = var.replicate_source_db
+  instance_class      = var.read_replica_instance_class
+  vpc_security_group_ids = [aws_security_group.rds.id]
+  publicly_accessible    = false
+
+  # Monitoring
+  monitoring_interval = var.monitoring_interval
+  monitoring_role_arn = var.monitoring_interval > 0 ? aws_iam_role.rds_enhanced_monitoring.arn : null
+
+  # Performance Insights
+  performance_insights_enabled          = var.performance_insights_enabled
+  performance_insights_retention_period = var.performance_insights_enabled ? var.performance_insights_retention_period : null
+
+  auto_minor_version_upgrade = var.auto_minor_version_upgrade
+
+  tags = merge(var.tags, {
+    Name = "${var.name}-cross-region-replica"
+    Role = "cross-region-replica"
+  })
+
+  depends_on = [aws_security_group.rds]
+}
 # RDS Module - PostgreSQL with High Availability and Reliability
 
 # Random password for the master database

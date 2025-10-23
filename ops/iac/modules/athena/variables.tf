@@ -15,6 +15,11 @@ variable "cloudfront_logs_bucket_name" {
   default     = "dev-ecom-cloudfront-logs"
 }
 
+variable "cloudfront_logs_bucket" {
+  description = "S3 bucket for CloudFront logs"
+  type        = string
+}
+
 variable "s3_bucket" {
   description = "S3 bucket for Athena database"
   type        = string

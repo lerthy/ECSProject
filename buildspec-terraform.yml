@@ -1,0 +1,72 @@
+version: 0.2
+
+env:
+  variables:
+    TF_VERSION: "1.6.0"
+    TF_IN_AUTOMATION: "true"
+    TF_INPUT: "false"
+    TF_WORKSPACE: "dev"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo Installing Terraform...
+      - wget https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip
+      - unzip terraform_${TF_VERSION}_linux_amd64.zip
+      - mv terraform /usr/local/bin/
+      - terraform version
+      - echo Installing additional tools...
+      - pip3 install awscli --upgrade
+
+  pre_build:
+    commands:
+      - echo Starting Terraform operations...
+      - cd ops/iac
+      - echo Initializing Terraform...
+      - terraform init -backend=false
+      - echo Formatting and validating Terraform...
+      - terraform fmt -check -recursive
+      - terraform validate
+      - echo Running security scan with tfsec...
+      - wget -O tfsec https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64
+      - chmod +x tfsec
+      - ./tfsec --format json --out tfsec-results.json . || true
+      - echo Setting up Terraform backend...
+      - terraform init -backend-config="bucket=$TF_BACKEND_BUCKET" -backend-config="key=$TF_BACKEND_KEY" -backend-config="region=us-east-1"
+
+  build:
+    commands:
+      - echo Creating and applying Terraform plan...
+      - terraform plan -detailed-exitcode -out=tfplan -var-file="../config/dev/terraform.tfvars"
+      - terraform show -json tfplan > tfplan.json
+      - echo Applying Terraform changes...
+      - terraform apply -auto-approve tfplan
+      - echo Terraform apply completed successfully
+      - terraform output -json > terraform-outputs.json
+
+  post_build:
+    commands:
+      - echo "Terraform operations completed on $(date)"
+      - echo Infrastructure deployment summary:
+      - terraform output
+      - echo Cleaning up temporary files...
+      - rm -f tfplan
+
+artifacts:
+  files:
+    - ops/iac/terraform-outputs.json
+    - ops/iac/tfplan.json
+    - ops/iac/tfsec-results.json
+  name: terraform-artifacts
+
+reports:
+  terraform-security:
+    files:
+      - ops/iac/tfsec-results.json
+    file-format: 'JSON'
+
+cache:
+  paths:
+    - '/root/.terraform.d/plugin-cache/**/*'

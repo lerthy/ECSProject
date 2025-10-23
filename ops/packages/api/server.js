@@ -29,6 +29,67 @@ try {
     app.use((req, res, next) => next());
 }
 
+// AWS CloudWatch custom metrics setup
+let CloudWatch;
+try {
+    CloudWatch = require('aws-sdk').CloudWatch;
+    const cloudwatch = new CloudWatch({ region: process.env.AWS_REGION || 'us-east-1' });
+    console.log('📊 AWS CloudWatch custom metrics enabled');
+} catch (error) {
+    console.log('⚠️  AWS CloudWatch not available (development mode)');
+    CloudWatch = null;
+}
+
+// Custom metrics middleware
+function sendCustomMetrics(req, res, next) {
+    if (!CloudWatch) {
+        return next();
+    }
+
+    const startTime = Date.now();
+    
+    res.on('finish', () => {
+        const duration = Date.now() - startTime;
+        const cloudwatch = new CloudWatch({ region: process.env.AWS_REGION || 'us-east-1' });
+        
+        const params = {
+            Namespace: 'ECommerce/API',
+            MetricData: [
+                {
+                    MetricName: 'RequestCount',
+                    Value: 1,
+                    Unit: 'Count',
+                    Dimensions: [
+                        { Name: 'Method', Value: req.method },
+                        { Name: 'Route', Value: req.route?.path || req.path },
+                        { Name: 'StatusCode', Value: res.statusCode.toString() }
+                    ]
+                },
+                {
+                    MetricName: 'ResponseTime',
+                    Value: duration,
+                    Unit: 'Milliseconds',
+                    Dimensions: [
+                        { Name: 'Method', Value: req.method },
+                        { Name: 'Route', Value: req.route?.path || req.path }
+                    ]
+                }
+            ]
+        };
+        
+        cloudwatch.putMetricData(params, (err) => {
+            if (err) {
+                console.error('Failed to send custom metrics:', err);
+            }
+        });
+    });
+    
+    next();
+}
+
+// Apply custom metrics middleware
+app.use(sendCustomMetrics);
+
 // Initialize database connection
 async function initializeDatabase() {
     try {

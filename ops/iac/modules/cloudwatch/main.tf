@@ -61,3 +61,53 @@ resource "aws_cloudwatch_metric_alarm" "cloudfront_cache_ratio" {
   alarm_actions       = [var.sns_topic_arn]
   tags                = var.tags
 }
+
+# Custom application metrics alarms
+resource "aws_cloudwatch_metric_alarm" "api_high_response_time" {
+  alarm_name          = "api-high-response-time-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "ResponseTime"
+  namespace           = "ECommerce/API"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 2000  # 2 seconds
+  alarm_description   = "API response time is too high"
+  alarm_actions       = [var.sns_topic_arn]
+  ok_actions          = [var.sns_topic_arn]
+  tags                = var.tags
+}
+
+resource "aws_cloudwatch_metric_alarm" "api_high_error_rate" {
+  alarm_name          = "api-high-error-rate-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "RequestCount"
+  namespace           = "ECommerce/API"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 10
+  alarm_description   = "API error rate is too high"
+  alarm_actions       = [var.sns_topic_arn]
+  ok_actions          = [var.sns_topic_arn]
+  tags                = var.tags
+
+  dimensions = {
+    StatusCode = "5XX"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "api_low_request_count" {
+  alarm_name          = "api-low-request-count-${var.environment}"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 3
+  metric_name         = "RequestCount"
+  namespace           = "ECommerce/API"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "API request count is too low (possible outage)"
+  alarm_actions       = [var.sns_topic_arn]
+  ok_actions          = [var.sns_topic_arn]
+  tags                = var.tags
+}

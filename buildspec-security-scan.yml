@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Installing security scanning tools..."
+      - pip install checkov
+      - curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/main/scripts/install_linux.sh | bash
+      - echo "Security scanning tools installed successfully"
+
+  build:
+    commands:
+      - echo "Running Checkov security scan..."
+      - checkov -d ops/iac --framework terraform --output cli --output junitxml --output-file-path checkov-results.xml
+      - echo "Running tfsec security scan..."
+      - tfsec ops/iac --format junit --out tfsec-results.xml
+      - echo "Security scans completed successfully"
+
+  post_build:
+    commands:
+      - echo "Security scan results:"
+      - ls -la *.xml
+      - echo "Security scanning phase completed"
+
+artifacts:
+  files:
+    - '**/*'
+  name: security-scan-results-$(date +%Y-%m-%d-%H-%M-%S)

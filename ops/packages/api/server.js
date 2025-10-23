@@ -28,12 +28,6 @@ try {
         console.log(`🔍 X-Ray daemon address configured: ${process.env.AWS_XRAY_DAEMON_ADDRESS}`);
     }
 
-    // Configure X-Ray SDK for ECS environment
-    AWSXRay.config([
-        AWSXRay.plugins.ECSPlugin,
-        AWSXRay.plugins.EC2Plugin
-    ]);
-
     // Use the service name from environment variable to match X-Ray configuration
     const serviceName = process.env.AWS_XRAY_TRACING_NAME || 'ecommerce-api-dev';
     app.use(AWSXRay.express.openSegment(serviceName));

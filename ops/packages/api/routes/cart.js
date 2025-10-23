@@ -3,13 +3,14 @@ const Joi = require('joi');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
-// AWS X-Ray setup (optional) - disabled for local development
+// AWS X-Ray setup (optional)
 let AWSXRay;
-if (process.env.DISABLE_XRAY !== 'true' && process.env.NODE_ENV === 'production') {
+if (process.env.DISABLE_XRAY !== 'true') {
     try {
         AWSXRay = require('aws-xray-sdk-core');
+        console.log('🔍 X-Ray SDK loaded in cart routes');
     } catch (error) {
-        console.log('X-Ray not available');
+        console.log('⚠️ X-Ray not available in cart routes:', error.message);
     }
 }
 

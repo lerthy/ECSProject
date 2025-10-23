@@ -11,12 +11,6 @@ try {
         AWSXRay.setDaemonAddress(process.env.AWS_XRAY_DAEMON_ADDRESS);
     }
 
-    // Configure X-Ray SDK for ECS environment
-    AWSXRay.config([
-        AWSXRay.plugins.ECSPlugin,
-        AWSXRay.plugins.EC2Plugin
-    ]);
-
     AWS = AWSXRay.captureAWS(AWS);
     console.log('🔍 X-Ray SDK loaded for database operations');
 } catch (error) {

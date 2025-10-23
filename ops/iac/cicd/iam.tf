@@ -1,35 +1,13 @@
 # IAM roles and policies for CI/CD
 
-# CodePipeline service role
-resource "aws_iam_role" "codepipeline" {
+# Use data source for existing CodePipeline service role
+data "aws_iam_role" "codepipeline" {
   name = "ecommerce-codepipeline-role"
-
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes = [
-      name
-    ]
-  }
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "codepipeline.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = var.tags
 }
 
 resource "aws_iam_role_policy" "codepipeline" {
   name = "ecommerce-codepipeline-policy"
-  role = aws_iam_role.codepipeline.id
+  role = data.aws_iam_role.codepipeline.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -90,36 +68,14 @@ resource "aws_iam_role_policy" "codepipeline" {
   })
 }
 
-# CodeBuild service role
-resource "aws_iam_role" "codebuild" {
+# Use data source for existing CodeBuild service role
+data "aws_iam_role" "codebuild" {
   name = "ecommerce-codebuild-role"
-
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes = [
-      name
-    ]
-  }
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "codebuild.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = var.tags
 }
 
 resource "aws_iam_role_policy" "codebuild" {
   name = "ecommerce-codebuild-policy"
-  role = aws_iam_role.codebuild.id
+  role = data.aws_iam_role.codebuild.id
 
   policy = jsonencode({
     Version = "2012-10-17"

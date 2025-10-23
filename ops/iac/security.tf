@@ -33,22 +33,12 @@ resource "aws_cloudtrail" "main" {
 # AWS Config
 resource "aws_config_configuration_recorder" "main" {
   name     = "main-recorder"
-  role_arn = aws_iam_role.config.arn
+  role_arn = data.aws_iam_role.config.arn
 }
 
-# IAM role for Config with lifecycle to prevent destruction
-resource "aws_iam_role" "config" {
-  name               = "config-recorder-role"
-  assume_role_policy = data.aws_iam_policy_document.config_assume_role_policy.json
-  tags               = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes = [
-      name,
-      tags
-    ]
-  }
+# Use data source for existing IAM role
+data "aws_iam_role" "config" {
+  name = "config-recorder-role"
 }
 
 data "aws_iam_policy_document" "config_assume_role_policy" {
@@ -62,7 +52,7 @@ data "aws_iam_policy_document" "config_assume_role_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "config_policy" {
-  role       = aws_iam_role.config.name
+  role       = data.aws_iam_role.config.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWS_ConfigRole"
 }
 
@@ -72,21 +62,12 @@ resource "aws_config_delivery_channel" "main" {
   depends_on     = [aws_config_configuration_recorder.main]
 }
 
-# Secrets Manager with lifecycle to prevent destruction
-resource "aws_secretsmanager_secret" "app" {
+# Use data source for existing Secrets Manager secret
+data "aws_secretsmanager_secret" "app" {
   name = "app/secret"
-  tags = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes = [
-      name,
-      tags
-    ]
-  }
 }
 
 resource "aws_secretsmanager_secret_version" "app" {
-  secret_id     = aws_secretsmanager_secret.app.id
+  secret_id     = data.aws_secretsmanager_secret.app.id
   secret_string = var.app_secret_string
 }

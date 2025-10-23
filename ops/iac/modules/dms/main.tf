@@ -94,23 +94,9 @@ resource "aws_dms_endpoint" "target" {
   ssl_mode      = var.target_ssl_mode
 }
 
-resource "aws_dms_replication_task" "this" {
-  replication_task_id       = var.replication_task_id
-  migration_type            = var.migration_type
-  replication_instance_arn  = data.aws_dms_replication_instance.this.replication_instance_arn
-  source_endpoint_arn       = data.aws_dms_endpoint.source.endpoint_arn
-  target_endpoint_arn       = data.aws_dms_endpoint.target.endpoint_arn
-  table_mappings            = file("${path.module}/table-mappings.json")
-  replication_task_settings = file("${path.module}/task-settings.json")
-  tags                      = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes = [
-      replication_task_id,
-      tags
-    ]
-  }
+# Use data source for existing DMS replication task
+data "aws_dms_replication_task" "this" {
+  replication_task_id = var.replication_task_id
 }
 
 # CloudWatch Alarms for DMS monitoring

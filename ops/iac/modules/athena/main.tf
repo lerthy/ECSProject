@@ -355,24 +355,7 @@ resource "aws_glue_catalog_table" "alb_logs" {
   }
 }
 
-# Athena workgroup - use lifecycle to prevent destruction
-resource "aws_athena_workgroup" "logs" {
+# Use data source for existing Athena workgroup
+data "aws_athena_workgroup" "logs" {
   name = var.workgroup_name
-  configuration {
-    result_configuration {
-      output_location = var.output_location
-    }
-  }
-  state         = "ENABLED"
-  force_destroy = true
-  tags          = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes = [
-      name,
-      tags,
-      configuration
-    ]
-  }
 }

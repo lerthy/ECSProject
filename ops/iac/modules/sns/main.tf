@@ -1,26 +1,7 @@
-# Lambda for Slack notifications (optional, if slack_webhook is set)
-resource "aws_lambda_function" "slack_notifier" {
-  count            = var.slack_webhook != "" ? 1 : 0
-  filename         = "${path.module}/slack_notifier.zip"
-  function_name    = "sns-slack-notifier-${var.name}"
-  role             = data.aws_iam_role.lambda_slack_notifier[0].arn
-  handler          = "index.handler"
-  runtime          = "python3.12"
-  source_code_hash = filebase64sha256("${path.module}/slack_notifier.zip")
-  environment {
-    variables = {
-      SLACK_WEBHOOK_URL = var.slack_webhook
-    }
-  }
-  tags = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes = [
-      function_name,
-      tags
-    ]
-  }
+# Use data source for existing Lambda function
+data "aws_lambda_function" "slack_notifier" {
+  count         = var.slack_webhook != "" ? 1 : 0
+  function_name = "sns-slack-notifier-${var.name}"
 }
 
 # Use data source for existing Lambda Slack notifier role

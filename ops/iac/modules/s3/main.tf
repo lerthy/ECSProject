@@ -84,24 +84,14 @@ resource "aws_s3_bucket_replication_configuration" "frontend" {
 # Data source for ELB service account - per best practices
 data "aws_elb_service_account" "main" {}
 
-# S3 bucket with lifecycle to prevent destruction
-resource "aws_s3_bucket" "frontend" {
-  bucket        = var.frontend_bucket_name
-  force_destroy = true
-  tags          = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes = [
-      bucket,
-      tags
-    ]
-  }
+# Use data source for existing S3 bucket
+data "aws_s3_bucket" "frontend" {
+  bucket = var.frontend_bucket_name
 }
 
 # Added encryption configuration per best practices
 resource "aws_s3_bucket_server_side_encryption_configuration" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
+  bucket = data.aws_s3_bucket.frontend.id
 
   rule {
     apply_server_side_encryption_by_default {
@@ -112,7 +102,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "frontend" {
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
+  bucket = data.aws_s3_bucket.frontend.id
 
   block_public_acls       = false
   block_public_policy     = false
@@ -121,7 +111,7 @@ resource "aws_s3_bucket_public_access_block" "frontend" {
 }
 
 resource "aws_s3_bucket_policy" "frontend" {
-  bucket     = aws_s3_bucket.frontend.id
+  bucket     = data.aws_s3_bucket.frontend.id
   depends_on = [aws_s3_bucket_public_access_block.frontend]
 
   policy = jsonencode({
@@ -132,14 +122,14 @@ resource "aws_s3_bucket_policy" "frontend" {
         Effect    = "Allow"
         Principal = "*"
         Action    = "s3:GetObject"
-        Resource  = "${aws_s3_bucket.frontend.arn}/*"
+        Resource  = "${data.aws_s3_bucket.frontend.arn}/*"
       }
     ]
   })
 }
 
 resource "aws_s3_bucket_website_configuration" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
+  bucket = data.aws_s3_bucket.frontend.id
   index_document {
     suffix = "index.html"
   }
@@ -148,24 +138,14 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
   }
 }
 
-# ALB logs bucket with lifecycle to prevent destruction
-resource "aws_s3_bucket" "alb_logs" {
-  bucket        = var.alb_logs_bucket_name
-  force_destroy = true
-  tags          = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes = [
-      bucket,
-      tags
-    ]
-  }
+# Use data source for existing ALB logs bucket
+data "aws_s3_bucket" "alb_logs" {
+  bucket = var.alb_logs_bucket_name
 }
 
 # Added encryption configuration per best practices
 resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs" {
-  bucket = aws_s3_bucket.alb_logs.id
+  bucket = data.aws_s3_bucket.alb_logs.id
 
   rule {
     apply_server_side_encryption_by_default {
@@ -177,7 +157,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs" {
 
 # ALB logs bucket policy
 resource "aws_s3_bucket_policy" "alb_logs" {
-  bucket = aws_s3_bucket.alb_logs.id
+  bucket = data.aws_s3_bucket.alb_logs.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -188,7 +168,7 @@ resource "aws_s3_bucket_policy" "alb_logs" {
           AWS = "arn:aws:iam::${data.aws_elb_service_account.main.id}:root" # ELB service account - dynamic lookup per best practices
         }
         Action   = "s3:PutObject"
-        Resource = "${aws_s3_bucket.alb_logs.arn}/*"
+        Resource = "${data.aws_s3_bucket.alb_logs.arn}/*"
       },
       {
         Effect = "Allow"
@@ -196,7 +176,7 @@ resource "aws_s3_bucket_policy" "alb_logs" {
           Service = "cloudtrail.amazonaws.com"
         }
         Action   = "s3:PutObject"
-        Resource = "${aws_s3_bucket.alb_logs.arn}/*"
+        Resource = "${data.aws_s3_bucket.alb_logs.arn}/*"
         Condition = {
           StringEquals = {
             "s3:x-amz-acl" = "bucket-owner-full-control"
@@ -209,7 +189,7 @@ resource "aws_s3_bucket_policy" "alb_logs" {
           Service = "cloudtrail.amazonaws.com"
         }
         Action   = "s3:GetBucketAcl"
-        Resource = aws_s3_bucket.alb_logs.arn
+        Resource = data.aws_s3_bucket.alb_logs.arn
       },
       {
         Effect = "Allow"
@@ -217,7 +197,7 @@ resource "aws_s3_bucket_policy" "alb_logs" {
           Service = "config.amazonaws.com"
         }
         Action   = "s3:GetBucketAcl"
-        Resource = aws_s3_bucket.alb_logs.arn
+        Resource = data.aws_s3_bucket.alb_logs.arn
       },
       {
         Effect = "Allow"
@@ -225,7 +205,7 @@ resource "aws_s3_bucket_policy" "alb_logs" {
           Service = "config.amazonaws.com"
         }
         Action   = "s3:PutObject"
-        Resource = "${aws_s3_bucket.alb_logs.arn}/*"
+        Resource = "${data.aws_s3_bucket.alb_logs.arn}/*"
         Condition = {
           StringEquals = {
             "s3:x-amz-acl" = "bucket-owner-full-control"
@@ -237,24 +217,14 @@ resource "aws_s3_bucket_policy" "alb_logs" {
 }
 
 
-# CloudFront logs bucket with lifecycle to prevent destruction
-resource "aws_s3_bucket" "cloudfront_logs" {
-  bucket        = var.cloudfront_logs_bucket_name
-  force_destroy = true
-  tags          = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes = [
-      bucket,
-      tags
-    ]
-  }
+# Use data source for existing CloudFront logs bucket
+data "aws_s3_bucket" "cloudfront_logs" {
+  bucket = var.cloudfront_logs_bucket_name
 }
 
 # Added encryption configuration per best practices
 resource "aws_s3_bucket_server_side_encryption_configuration" "cloudfront_logs" {
-  bucket = aws_s3_bucket.cloudfront_logs.id
+  bucket = data.aws_s3_bucket.cloudfront_logs.id
 
   rule {
     apply_server_side_encryption_by_default {
@@ -266,13 +236,13 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "cloudfront_logs" 
 
 # CloudFront logs bucket needs ACL enabled
 resource "aws_s3_bucket_acl" "cloudfront_logs" {
-  bucket     = aws_s3_bucket.cloudfront_logs.id
+  bucket     = data.aws_s3_bucket.cloudfront_logs.id
   acl        = "private"
   depends_on = [aws_s3_bucket_ownership_controls.cloudfront_logs]
 }
 
 resource "aws_s3_bucket_ownership_controls" "cloudfront_logs" {
-  bucket = aws_s3_bucket.cloudfront_logs.id
+  bucket = data.aws_s3_bucket.cloudfront_logs.id
 
   rule {
     object_ownership = "BucketOwnerPreferred"

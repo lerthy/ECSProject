@@ -45,6 +45,8 @@ Resources:
                 Branch: devLerdi
                 OAuthToken: !Ref GitHubToken
                 PollForSourceChanges: true
+                # Force polling every 5 minutes
+                PollForSourceChanges: true
         - Name: Infrastructure
           Actions:
             - Name: TerraformBuild
@@ -74,12 +76,25 @@ Resources:
               Configuration:
                 ProjectName: ecommerce-webapp
 
-  # CloudWatch Event Rule to trigger pipeline on every push
+  # CloudWatch Event Rule to trigger pipeline every 5 minutes
   PipelineTriggerRule:
     Type: AWS::Events::Rule
     Properties:
-      Name: ecommerce-pipeline-trigger
-      Description: Trigger pipeline on every push to devLerdi branch
+      Name: ecommerce-pipeline-trigger-schedule
+      Description: Trigger pipeline every 5 minutes to check for changes
+      ScheduleExpression: rate(5 minutes)
+      State: ENABLED
+      Targets:
+        - Arn: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:pipeline/ecommerce-cicd-pipeline"
+          Id: PipelineTrigger
+          RoleArn: !Ref PipelineRoleArn
+
+  # CloudWatch Event Rule to trigger pipeline on GitHub webhook
+  PipelineWebhookRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: ecommerce-pipeline-trigger-webhook
+      Description: Trigger pipeline on GitHub webhook events
       EventPattern:
         source:
           - aws.codecommit
@@ -95,7 +110,7 @@ Resources:
       State: ENABLED
       Targets:
         - Arn: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:pipeline/ecommerce-cicd-pipeline"
-          Id: PipelineTrigger
+          Id: PipelineWebhookTrigger
           RoleArn: !Ref PipelineRoleArn
 
   # IAM Role for EventBridge to trigger pipeline

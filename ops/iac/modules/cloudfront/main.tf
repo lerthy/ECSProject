@@ -14,6 +14,8 @@ resource "aws_cloudfront_distribution" "this" {
   price_class         = var.price_class
   web_acl_id          = var.web_acl_id
   http_version        = "http2"
+
+  # Default cache behavior for S3 frontend
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
@@ -29,11 +31,44 @@ resource "aws_cloudfront_distribution" "this" {
     default_ttl = 3600
     max_ttl     = 86400
   }
+
+  # API cache behavior for ALB backend
+  ordered_cache_behavior {
+    path_pattern           = "/api/*"
+    allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods         = ["GET", "HEAD", "OPTIONS"]
+    target_origin_id       = "alb-backend"
+    viewer_protocol_policy = "redirect-to-https"
+    forwarded_values {
+      query_string = true
+      headers      = ["*"]
+      cookies {
+        forward = "all"
+      }
+    }
+    min_ttl     = 0
+    default_ttl = 0
+    max_ttl     = 0
+  }
+
+  # S3 Frontend Origin
   origin {
     domain_name = var.s3_domain_name
     origin_id   = "s3-frontend"
     s3_origin_config {
       origin_access_identity = aws_cloudfront_origin_access_identity.frontend_oai.cloudfront_access_identity_path
+    }
+  }
+
+  # ALB Backend Origin
+  origin {
+    domain_name = var.alb_domain_name
+    origin_id   = "alb-backend"
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
   viewer_certificate {

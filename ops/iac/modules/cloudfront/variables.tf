@@ -27,7 +27,10 @@ variable "s3_domain_name" {
   type        = string
 }
 
-
+variable "alb_domain_name" {
+  description = "Domain name of the ALB origin for API requests"
+  type        = string
+}
 
 variable "logs_bucket_domain_name" {
   description = "Domain name of the S3 bucket for logs"

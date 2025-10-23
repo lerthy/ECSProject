@@ -170,6 +170,7 @@ module "ecs_standby" {
 module "cloudfront" {
   source                  = "./modules/cloudfront"
   s3_domain_name          = module.s3.frontend_bucket_domain_name
+  alb_domain_name         = module.alb.alb_dns_name
   logs_bucket_domain_name = module.s3.cloudfront_logs_bucket_domain_name
   web_acl_id              = aws_wafv2_web_acl.cloudfront.arn
   tags                    = var.tags

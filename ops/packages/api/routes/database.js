@@ -261,4 +261,129 @@ router.get('/status', async (req, res) => {
     }
 });
 
+// POST /api/database/create-tables - Create tables and populate with sample data (inline)
+router.post('/create-tables', async (req, res) => {
+    const subsegment = createSubsegment('create-database-tables');
+
+    try {
+        console.log('🚀 Starting inline database table creation...');
+
+        // Create UUID extension if not exists
+        await dbConnection.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+        console.log('✅ UUID extension created');
+
+        // Create categories table
+        await dbConnection.query(`
+            CREATE TABLE IF NOT EXISTS categories (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                name VARCHAR(100) UNIQUE NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Categories table created');
+
+        // Create products table
+        await dbConnection.query(`
+            CREATE TABLE IF NOT EXISTS products (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                name VARCHAR(255) NOT NULL,
+                description TEXT,
+                price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
+                stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
+                category_id UUID REFERENCES categories(id),
+                image_url VARCHAR(500),
+                sku VARCHAR(100) UNIQUE,
+                is_active BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Products table created');
+
+        // Insert categories
+        const categoriesData = [
+            ['Electronics', 'Electronic devices and gadgets'],
+            ['Sports', 'Sports equipment and apparel'],
+            ['Books', 'Books and educational materials'],
+            ['Home & Garden', 'Home improvement and garden supplies'],
+            ['Clothing', 'Fashion and apparel']
+        ];
+
+        for (const [name, description] of categoriesData) {
+            try {
+                await dbConnection.query(
+                    'INSERT INTO categories (name, description) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING',
+                    [name, description]
+                );
+                console.log(`✅ Category inserted: ${name}`);
+            } catch (error) {
+                console.log(`⚠️  Category ${name} already exists or error:`, error.message);
+            }
+        }
+
+        // Get category IDs
+        const electronicsResult = await dbConnection.query(
+            'SELECT id FROM categories WHERE name = $1', ['Electronics']
+        );
+        const sportsResult = await dbConnection.query(
+            'SELECT id FROM categories WHERE name = $1', ['Sports']
+        );
+
+        if (electronicsResult.rows.length === 0 || sportsResult.rows.length === 0) {
+            throw new Error('Categories not found after insertion');
+        }
+
+        const electronicsId = electronicsResult.rows[0].id;
+        const sportsId = sportsResult.rows[0].id;
+
+        // Insert products
+        const productsData = [
+            ['Wireless Headphones', 'High-quality wireless headphones with noise cancellation', 199.99, 50, electronicsId, 'WH-001'],
+            ['Smartphone', 'Latest model smartphone with advanced features', 799.99, 30, electronicsId, 'SP-002'],
+            ['Running Shoes', 'Comfortable running shoes for all terrains', 129.99, 100, sportsId, 'RS-003'],
+            ['Gaming Laptop', 'High-performance gaming laptop with RTX graphics', 1499.99, 15, electronicsId, 'GL-004'],
+            ['Fitness Tracker', 'Advanced fitness tracker with heart rate monitoring', 249.99, 80, sportsId, 'FT-005']
+        ];
+
+        for (const [name, description, price, stock, categoryId, sku] of productsData) {
+            try {
+                await dbConnection.query(
+                    'INSERT INTO products (name, description, price, stock, category_id, sku) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (sku) DO NOTHING',
+                    [name, description, price, stock, categoryId, sku]
+                );
+                console.log(`✅ Product inserted: ${name}`);
+            } catch (error) {
+                console.log(`⚠️  Product ${name} already exists or error:`, error.message);
+            }
+        }
+
+        // Get final counts
+        const categoriesCount = await dbConnection.query('SELECT COUNT(*) FROM categories');
+        const productsCount = await dbConnection.query('SELECT COUNT(*) FROM products');
+
+        useSubsegment(subsegment, 'addAnnotation')('tables_created', true);
+        useSubsegment(subsegment, 'close')();
+
+        res.json({
+            message: 'Database tables created and populated successfully',
+            status: 'completed',
+            results: {
+                categories_created: parseInt(categoriesCount.rows[0].count),
+                products_created: parseInt(productsCount.rows[0].count)
+            }
+        });
+
+    } catch (error) {
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
+        console.error('Database table creation error:', error);
+        res.status(500).json({
+            error: 'Failed to create database tables',
+            details: error.message
+        });
+    }
+});
+
 module.exports = router;

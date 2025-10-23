@@ -227,6 +227,7 @@ variable "github_branch" {
 variable "github_token" {
   description = "GitHub OAuth token"
   type        = string
+  default     = ""
   sensitive   = true
 }
 

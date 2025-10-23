@@ -28,6 +28,12 @@ variable "azs" {
   type        = list(string)
 }
 
+variable "container_port" {
+  description = "Port on which the container application runs"
+  type        = number
+  default     = 3000
+}
+
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)

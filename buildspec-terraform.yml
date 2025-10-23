@@ -39,7 +39,10 @@ phases:
   build:
     commands:
       - echo Creating and applying Terraform plan...
-      - terraform plan -detailed-exitcode -out=tfplan
+      - terraform plan -detailed-exitcode -out=tfplan || PLAN_EXIT_CODE=$?
+      - if [ "$PLAN_EXIT_CODE" = "2" ]; then echo "Plan shows changes to be applied"; fi
+      - if [ "$PLAN_EXIT_CODE" = "1" ]; then echo "Plan failed with errors"; exit 1; fi
+      - if [ "$PLAN_EXIT_CODE" = "0" ]; then echo "No changes to apply"; fi
       - terraform show -json tfplan > tfplan.json
       - echo Applying Terraform changes...
       - terraform apply -auto-approve tfplan

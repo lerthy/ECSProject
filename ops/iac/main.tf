@@ -63,7 +63,7 @@ module "s3" {
   enable_replication             = var.enable_s3_replication
   replication_role_arn           = "" # Not needed for source, created in module
   replication_destination_bucket = var.replication_destination_bucket_arn
-  create_buckets                 = false # Use existing buckets to prevent BucketAlreadyExists errors
+  create_buckets                 = true # Create buckets on first run
 }
 
 # S3 in eu-north-1 (DR region)
@@ -74,7 +74,7 @@ module "s3_dr" {
   alb_logs_bucket_name        = var.alb_logs_bucket_name_dr
   cloudfront_logs_bucket_name = var.cloudfront_logs_bucket_name_dr
   tags                        = var.tags
-  create_buckets              = false # Use existing buckets to prevent BucketAlreadyExists errors
+  create_buckets              = true # Create buckets on first run
 }
 
 module "vpc" {
@@ -86,8 +86,8 @@ module "vpc" {
   db_subnets       = var.db_subnets
   azs              = var.azs
   tags             = var.tags
-  use_existing_vpc = var.use_existing_vpc # Use existing VPC to prevent VpcLimitExceeded errors
-  existing_vpc_id  = ""                   # Will auto-detect by name tag
+  use_existing_vpc = false # Create new VPC on first run
+  existing_vpc_id  = ""
 }
 
 # VPC in eu-north-1 (DR region)
@@ -101,8 +101,8 @@ module "vpc_dr" {
   db_subnets       = var.db_subnets_dr
   azs              = var.azs_dr
   tags             = var.tags
-  use_existing_vpc = var.use_existing_vpc # Use existing VPC to prevent VpcLimitExceeded errors
-  existing_vpc_id  = ""                   # Will auto-detect by name tag
+  use_existing_vpc = false # Create new VPC on first run
+  existing_vpc_id  = ""
 }
 
 module "rds" {

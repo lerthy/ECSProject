@@ -398,7 +398,7 @@ variable "github_branch" {
 variable "use_existing_vpc" {
   description = "Whether to use existing VPCs instead of creating new ones (to avoid VPC limits)"
   type        = bool
-  default     = true
+  default     = false
 }
 
 # =====================

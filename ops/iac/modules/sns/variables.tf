@@ -19,3 +19,9 @@ variable "slack_webhook" {
   type        = string
   default     = ""
 }
+
+variable "create_topic" {
+  description = "Whether to create the SNS topic or use existing one"
+  type        = bool
+  default     = true
+}

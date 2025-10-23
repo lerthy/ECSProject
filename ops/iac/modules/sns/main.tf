@@ -41,12 +41,12 @@ resource "aws_lambda_permission" "allow_sns" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.slack_notifier[0].function_name
   principal     = "sns.amazonaws.com"
-  source_arn    = aws_sns_topic.alerts.arn
+  source_arn    = var.create_topic ? aws_sns_topic.alerts[0].arn : data.aws_sns_topic.alerts[0].arn
 }
 
 resource "aws_sns_topic_subscription" "slack" {
   count      = var.slack_webhook != "" ? 1 : 0
-  topic_arn  = aws_sns_topic.alerts.arn
+  topic_arn  = var.create_topic ? aws_sns_topic.alerts[0].arn : data.aws_sns_topic.alerts[0].arn
   protocol   = "lambda"
   endpoint   = aws_lambda_function.slack_notifier[0].arn
   depends_on = [aws_lambda_permission.allow_sns]
@@ -54,13 +54,20 @@ resource "aws_sns_topic_subscription" "slack" {
 
 # SNS Module
 resource "aws_sns_topic" "alerts" {
-  name = var.name
-  tags = var.tags
+  count = var.create_topic ? 1 : 0
+  name  = var.name
+  tags  = var.tags
+}
+
+# Data source for existing SNS topic
+data "aws_sns_topic" "alerts" {
+  count = var.create_topic ? 0 : 1
+  name  = var.name
 }
 
 resource "aws_sns_topic_subscription" "email" {
   count      = var.sns_alert_email != "" ? 1 : 0
-  topic_arn  = aws_sns_topic.alerts.arn
+  topic_arn  = var.create_topic ? aws_sns_topic.alerts[0].arn : data.aws_sns_topic.alerts[0].arn
   protocol   = "email"
   endpoint   = var.sns_alert_email
   depends_on = [aws_sns_topic.alerts]

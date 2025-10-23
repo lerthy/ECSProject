@@ -18,7 +18,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           ]
           view    = "timeSeries"
           stacked = false
-          region  = data.aws_region.current.name
+          region  = data.aws_region.current.id
           title   = "ECS Service Metrics"
           period  = 300
         }
@@ -39,7 +39,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           ]
           view    = "timeSeries"
           stacked = false
-          region  = data.aws_region.current.name
+          region  = data.aws_region.current.id
           title   = "ALB Metrics"
           period  = 300
         }
@@ -58,7 +58,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           ]
           view    = "timeSeries"
           stacked = false
-          region  = data.aws_region.current.name
+          region  = data.aws_region.current.id
           title   = "RDS Metrics"
           period  = 300
         }

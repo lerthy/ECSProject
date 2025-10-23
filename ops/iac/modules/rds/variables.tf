@@ -22,6 +22,12 @@ variable "tags" {
   default     = {}
 }
 
+variable "environment" {
+  description = "Environment name (e.g., dev, prod, staging)"
+  type        = string
+  default     = "dev"
+}
+
 variable "vpc_id" {
   description = "VPC ID where RDS will be deployed"
   type        = string

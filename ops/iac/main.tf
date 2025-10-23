@@ -3,7 +3,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 3.0"
+      version = ">= 5.0"
     }
   }
 }
@@ -106,6 +106,7 @@ module "rds" {
   vpc_id                = module.vpc.vpc_id
   private_subnet_ids    = module.vpc.db_subnet_ids
   app_security_group_id = module.vpc.ecs_security_group_id
+  environment           = var.environment
 
   # Database configuration
   database_name  = "ecommerce"
@@ -435,7 +436,7 @@ module "cicd" {
   github_owner               = var.github_owner
   github_repo                = var.github_repo
   github_branch              = var.github_branch
-  github_token               = var.github_token
+  # github_token no longer needed with CodeStar Connection
   terraform_state_bucket     = "bardhi-ecom-terraform-state-dev"
   terraform_state_key        = "state/terraform.tfstate"
   ecr_repository_url         = module.ecr.repository_url

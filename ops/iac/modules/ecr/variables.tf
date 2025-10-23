@@ -8,3 +8,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "create_repository" {
+  description = "Whether to create the ECR repository or use existing one"
+  type        = bool
+  default     = true
+}

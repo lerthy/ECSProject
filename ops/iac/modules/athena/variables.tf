@@ -40,3 +40,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# variable "create_workgroup" {
+#   description = "Whether to create the Athena workgroup or use existing one"
+#   type        = bool
+#   default     = true
+# }

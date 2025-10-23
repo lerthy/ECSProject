@@ -17,7 +17,7 @@ locals {
     db_port                     = "5432"
     db_name                     = "ecommerce"
     db_username                 = "postgres"
-    aws_region                  = data.aws_region.current.name
+    aws_region                  = data.aws_region.current.id
     secrets_manager_secret_name = "ecommerce/${var.environment}/database"
     secrets_manager_secret_arn  = module.rds.secrets_manager_secret_arn
     log_group                   = "/ecs/${var.ecs_name}"
@@ -35,7 +35,7 @@ locals {
     db_port                     = "5432"
     db_name                     = "ecommerce"
     db_username                 = "postgres"
-    aws_region                  = data.aws_region.current.name
+    aws_region                  = data.aws_region.current.id
     secrets_manager_secret_name = "ecommerce/${var.environment}/database-standby"
     secrets_manager_secret_arn  = module.rds_standby.secrets_manager_secret_arn
     log_group                   = "/ecs/${var.ecs_name}-standby"

@@ -55,6 +55,13 @@ resource "aws_iam_role_policy" "codepipeline" {
       {
         Effect = "Allow"
         Action = [
+          "codestar-connections:UseConnection"
+        ]
+        Resource = data.aws_codestarconnections_connection.github.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "sns:Publish"
         ]
         Resource = var.sns_topic_arn != "" ? [var.sns_topic_arn] : []

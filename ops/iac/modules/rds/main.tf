@@ -211,6 +211,11 @@ resource "aws_db_instance" "primary" {
   # Copy tags to snapshots
   copy_tags_to_snapshot = true
 
+  # Lifecycle rules for production safety
+  lifecycle {
+    ignore_changes = [password, final_snapshot_identifier]
+  }
+
   tags = merge(var.tags, {
     Name = "${var.name}-primary"
     Role = "primary"

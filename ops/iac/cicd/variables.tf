@@ -21,11 +21,12 @@ variable "github_branch" {
   default     = "main"
 }
 
-variable "github_token" {
-  description = "GitHub OAuth token for your account"
-  type        = string
-  sensitive   = true
-}
+# GitHub token no longer needed with CodeStar Connection
+# variable "github_token" {
+#   description = "GitHub OAuth token for your account"
+#   type        = string
+#   sensitive   = true
+# }
 
 variable "sns_topic_arn" {
   description = "SNS topic ARN for notifications (optional)"

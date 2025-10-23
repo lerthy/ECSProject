@@ -3,6 +3,18 @@
 # Data sources
 data "aws_caller_identity" "current" {}
 
+# Use existing CodeStar Connection
+# resource "aws_codestarconnections_connection" "github" {
+#   name          = "github-connection"
+#   provider_type = "GitHub"
+#   tags          = var.tags
+# }
+
+# Data source for existing CodeStar Connection
+data "aws_codestarconnections_connection" "github" {
+  arn = "arn:aws:codeconnections:us-east-1:264765155009:connection/4f81760b-47ef-4d76-ba44-b82112702287"
+}
+
 # S3 bucket for pipeline artifacts
 resource "aws_s3_bucket" "artifacts" {
   bucket        = "ecommerce-cicd-artifacts-${random_string.suffix.result}"
@@ -218,16 +230,15 @@ resource "aws_codepipeline" "terraform" {
     action {
       name             = "Source"
       category         = "Source"
-      owner            = "ThirdParty"
-      provider         = "GitHub"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
       version          = "1"
       output_artifacts = ["terraform_source"]
 
       configuration = {
-        Owner      = var.github_owner
-        Repo       = var.github_repo
-        Branch     = var.github_branch
-        OAuthToken = var.github_token
+        ConnectionArn    = data.aws_codestarconnections_connection.github.arn
+        FullRepositoryId = "${var.github_owner}/${var.github_repo}"
+        BranchName       = var.github_branch
       }
     }
   }
@@ -333,16 +344,15 @@ resource "aws_codepipeline" "frontend" {
     action {
       name             = "Source"
       category         = "Source"
-      owner            = "ThirdParty"
-      provider         = "GitHub"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
       version          = "1"
       output_artifacts = ["frontend_source"]
 
       configuration = {
-        Owner      = var.github_owner
-        Repo       = var.github_repo
-        Branch     = var.github_branch
-        OAuthToken = var.github_token
+        ConnectionArn    = data.aws_codestarconnections_connection.github.arn
+        FullRepositoryId = "${var.github_owner}/${var.github_repo}"
+        BranchName       = var.github_branch
       }
     }
   }
@@ -423,16 +433,15 @@ resource "aws_codepipeline" "backend" {
     action {
       name             = "Source"
       category         = "Source"
-      owner            = "ThirdParty"
-      provider         = "GitHub"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
       version          = "1"
       output_artifacts = ["backend_source"]
 
       configuration = {
-        Owner      = var.github_owner
-        Repo       = var.github_repo
-        Branch     = var.github_branch
-        OAuthToken = var.github_token
+        ConnectionArn    = data.aws_codestarconnections_connection.github.arn
+        FullRepositoryId = "${var.github_owner}/${var.github_repo}"
+        BranchName       = var.github_branch
       }
     }
   }

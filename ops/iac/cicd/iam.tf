@@ -327,6 +327,17 @@ resource "aws_iam_role_policy" "codebuild" {
           "xray:PutTelemetryRecords"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "codebuild:CreateReportGroup",
+          "codebuild:UpdateReportGroup",
+          "codebuild:DeleteReportGroup",
+          "codebuild:ListReportGroups",
+          "codebuild:DescribeReportGroups"
+        ]
+        Resource = "*"
       }
     ]
   })

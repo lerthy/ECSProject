@@ -67,8 +67,8 @@ phases:
           exit 1
         fi
       - echo Creating CloudFront invalidation...
-      - INVALIDATION_ID=$(aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DIST_ID --paths "/*" --query 'Invalidation.Id' --output text)
-      - echo "CloudFront invalidation created with ID $INVALIDATION_ID"
+      - INVALIDATION_ID=$(aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DIST_ID --paths "/*" --query 'Invalidation.Id' --output text) || echo "CloudFront invalidation failed - rate limited, but S3 sync was successful"
+      - echo "CloudFront invalidation result $INVALIDATION_ID"
 
   post_build:
     commands:

@@ -432,7 +432,7 @@ class ECommerceApp {
         }
 
         try {
-            const response = await this.apiCall(`/checkout/${this.currentUserId}`, 'POST', checkoutData);
+            await this.apiCall(`/checkout/${this.currentUserId}`, 'POST', checkoutData);
 
             this.showToast('Order placed successfully!', 'success');
             document.getElementById('checkout-modal').classList.remove('active');

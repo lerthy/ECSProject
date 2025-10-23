@@ -1,10 +1,7 @@
 # Operational Excellence: CloudWatch, X-Ray, CodePipeline Notifications
 
-# CloudWatch Dashboard for ECS, ALB, CloudFront, S3
-resource "aws_cloudwatch_dashboard" "main" {
-  dashboard_name = "observability-dashboard"
-  dashboard_body = var.dashboard_body
-}
+# Note: CloudWatch Dashboard is managed by the cloudwatch module in main.tf
+# This avoids resource conflicts and centralizes dashboard management
 
 # CloudWatch Alarms for ECS CPU/Memory
 resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {

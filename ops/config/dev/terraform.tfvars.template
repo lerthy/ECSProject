@@ -65,9 +65,149 @@ price_class = "PriceClass_100" # Lowest cost
 # =====================
 log_retention_days = 7 # Log retention (days)
 # CloudWatch dashboard JSON
-dashboard_body    = <<DASHBOARD
+dashboard_body = <<DASHBOARD
 {
-    "widgets": []
+    "widgets": [
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    ["AWS/ECS", "CPUUtilization", "ServiceName", "ecommerce-api-dev-api", "ClusterName", "ecommerce-api-dev"],
+                    [".", "MemoryUtilization", ".", ".", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "ECS Service Metrics",
+                "period": 300,
+                "stat": "Average"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "app/ecommerce-alb-dev/1aff461ee94a079c"],
+                    [".", "RequestCount", ".", "."],
+                    [".", "HTTPCode_Target_5XX_Count", ".", "."],
+                    [".", "HTTPCode_Target_2XX_Count", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "ALB Performance Metrics",
+                "period": 300,
+                "stat": "Average"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "ecommerce-api-dev-db"],
+                    [".", "DatabaseConnections", ".", "."],
+                    [".", "FreeStorageSpace", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "RDS Database Metrics",
+                "period": 300,
+                "stat": "Average"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 6,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    ["AWS/CloudFront", "Requests", "DistributionId", "E1CBEUFNDAKCIO"],
+                    [".", "BytesDownloaded", ".", "."],
+                    [".", "CacheHitRate", ".", "."],
+                    [".", "4xxErrorRate", ".", "."],
+                    [".", "5xxErrorRate", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "CloudFront CDN Metrics",
+                "period": 300,
+                "stat": "Average"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 12,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    ["ECommerce/API", "ResponseTime"],
+                    [".", "RequestCount"]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Custom API Metrics",
+                "period": 300,
+                "stat": "Average"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 8,
+            "y": 12,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    ["AWS/WAFV2", "AllowedRequests", "WebACL", "cloudfront-waf", "Rule", "ALL"],
+                    [".", "BlockedRequests", ".", ".", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "WAF Security Metrics",
+                "period": 300,
+                "stat": "Sum"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 16,
+            "y": 12,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    ["AWS/ECS", "RunningTaskCount", "ServiceName", "ecommerce-api-dev-api", "ClusterName", "ecommerce-api-dev"],
+                    [".", "PendingTaskCount", ".", ".", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "ECS Task Counts",
+                "period": 300,
+                "stat": "Average"
+            }
+        }
+    ]
 }
 DASHBOARD
 ecs_cpu_threshold = 80 # CPU alarm threshold (%)

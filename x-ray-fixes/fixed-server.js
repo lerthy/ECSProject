@@ -17,14 +17,18 @@ const healthRoutes = require('./routes/health');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// AWS X-Ray tracing setup (optional for development)
+// AWS X-Ray tracing setup
 let AWSXRay;
 try {
     AWSXRay = require('aws-xray-sdk-express');
-    // Use the service name from environment variable to match X-Ray configuration
-    const serviceName = process.env.AWS_XRAY_TRACING_NAME || 'ecommerce-api-dev';
-    app.use(AWSXRay.express.openSegment(serviceName));
-    console.log(`🔍 AWS X-Ray tracing enabled with service name: ${serviceName}`);
+
+    // Configure X-Ray
+    const xrayExpress = AWSXRay.express;
+
+    // Open segment at the start of request
+    app.use(xrayExpress.openSegment('ecommerce-api-dev'));
+
+    console.log('🔍 AWS X-Ray tracing enabled');
 } catch (error) {
     console.log('⚠️  AWS X-Ray not available (development mode)');
     // Create mock middleware for development
@@ -94,13 +98,7 @@ app.get('/api', (req, res) => {
     });
 });
 
-// Close X-Ray segment after all routes but before error handling
-if (AWSXRay && AWSXRay.express && AWSXRay.express.closeSegment) {
-    app.use(AWSXRay.express.closeSegment());
-}
-
 // Error handling middleware
-// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({
@@ -122,6 +120,11 @@ app.get('*', (req, res) => {
     }
 });
 
+// IMPORTANT: Close X-Ray segment AFTER all routes but BEFORE starting server
+if (AWSXRay && AWSXRay.express && AWSXRay.express.closeSegment) {
+    app.use(AWSXRay.express.closeSegment());
+}
+
 // Start server only if not in test environment
 let server;
 if (process.env.NODE_ENV !== 'test') {
@@ -136,7 +139,7 @@ if (process.env.NODE_ENV !== 'test') {
                 console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
                 console.log(`🗄️  Database Host: ${process.env.DB_HOST || 'not configured'}`);
                 if (AWSXRay && AWSXRay.express) {
-                    console.log(`🔍 AWS X-Ray tracing enabled - Service: ${process.env.AWS_XRAY_TRACING_NAME || 'ecommerce-api-dev'}`);
+                    console.log(`🔍 AWS X-Ray tracing enabled with segment: ecommerce-api-dev`);
                     console.log(`🔍 X-Ray daemon address: ${process.env.AWS_XRAY_DAEMON_ADDRESS || '127.0.0.1:2000'}`);
                 } else {
                     console.log(`📊 Running in development mode (X-Ray disabled)`);

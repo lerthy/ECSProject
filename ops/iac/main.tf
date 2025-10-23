@@ -2,6 +2,9 @@ provider "aws" {
   region = var.region
 }
 
+# Data sources for account and region information
+data "aws_caller_identity" "current" {}
+
 module "s3" {
   source                      = "./modules/s3"
   frontend_bucket_name        = var.frontend_bucket_name
@@ -206,12 +209,15 @@ module "xray" {
 }
 
 module "athena" {
-  source          = "./modules/athena"
-  database_name   = var.athena_database_name
-  s3_bucket       = module.s3.alb_logs_bucket_name
-  workgroup_name  = var.athena_workgroup_name
-  output_location = var.athena_output_location
-  tags            = var.tags
+  source                      = "./modules/athena"
+  database_name               = var.athena_database_name
+  s3_bucket                   = module.s3.alb_logs_bucket_name
+  workgroup_name              = var.athena_workgroup_name
+  output_location             = var.athena_output_location
+  environment                 = var.environment
+  alb_logs_s3_location        = "s3://${module.s3.alb_logs_bucket_name}/alb-logs/AWSLogs/${data.aws_caller_identity.current.account_id}/elasticloadbalancing/${var.region}/"
+  cloudfront_logs_s3_location = "s3://${module.s3.alb_logs_bucket_name}/cloudfront-logs/"
+  tags                        = var.tags
 }
 
 module "monitoring_alarms" {

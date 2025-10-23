@@ -12,7 +12,7 @@ This E-Commerce Observability Platform leverages AWS services and Terraform for 
 
 ### Architecture Diagram
 
-![Architecture Diagram Placeholder](ARCHITECTURE_DIAGRAM.png)
+![Architecture Diagram Placeholder](finals123.png)
 
 ---
 
@@ -39,19 +39,130 @@ This E-Commerce Observability Platform leverages AWS services and Terraform for 
 
 ## 4. Observability & Alarms
 
-- CloudWatch dashboards and alarms for ECS, ALB, CloudFront, S3
-- SNS notifications for pipeline and operational events
-- AWS X-Ray tracing for distributed microservices
-- Athena queries for log analysis
+### 4.1 Monitoring Architecture Overview
 
-### CloudWatch Dashboard Screenshot
+The project implements a **multi-layered monitoring architecture** across:
+- **Infrastructure Layer**: ECS, ALB, RDS, CloudFront
+- **Application Layer**: Custom API metrics
+- **Security Layer**: WAF metrics
+- **Data Layer**: DMS replication monitoring
+- **Observability Layer**: X-Ray tracing, Athena analytics
+
+### 4.2 Infrastructure Metrics & Alarms
+
+#### 🚀 ECS (Elastic Container Service) Monitoring
+
+**Primary ECS Alarms:**
+- **ECS-CPU-High**: Triggers when CPU > 80% for 2 consecutive 1-minute periods
+- **Auto-Scaling Alarms**: AWS managed alarms for CPU/Memory based scaling
+  - CPU scale-up: >70%, scale-down: <54%
+  - Memory scale-up: >80%, scale-down: <67.5%
+
+**Metrics Collected:**
+- CPUUtilization, MemoryUtilization, RunningTaskCount, PendingTaskCount
+
+#### ⚖️ Application Load Balancer (ALB) Monitoring
+
+**ALB Performance Alarms:**
+- **ALB Latency**: `ecommerce-alb-dev-latency-dev` (Threshold: 1 second)
+- **ALB 5xx Errors**: `ecommerce-alb-dev-5xx-errors-dev` (Threshold: 5 errors)
+- **Period**: 60 seconds, 2 evaluation periods
+
+**Metrics Monitored:**
+- TargetResponseTime, HTTPCode_Target_5XX_Count, RequestCount, HealthyHostCount
+
+#### 🌍 CloudFront CDN Monitoring
+
+**Cache Performance Alarm:**
+- **Cache Hit Ratio**: `cloudfront-cache-hit-ratio-dev` (Minimum: 80%)
+- **Purpose**: Ensures optimal CDN performance
+
+**Metrics Tracked:**
+- CacheHitRate, Requests, BytesDownloaded, 4xxErrorRate, 5xxErrorRate
+
+#### 🗄️ RDS Database Monitoring
+
+**Database Performance Alarms (Primary & Standby):**
+- **CPU High**: 80% threshold, 5-minute periods
+- **High Connections**: 80 connections threshold
+- **Low Storage**: 1GB free space threshold
+
+**Metrics Monitored:**
+- CPUUtilization, DatabaseConnections, FreeStorageSpace, ReadLatency, WriteLatency
+
+### 4.3 Application-Level Metrics & Alarms
+
+#### 📊 Custom API Metrics (ECommerce/API Namespace)
+
+**Application Performance Alarms:**
+- **API Response Time**: `api-high-response-time-dev` (Threshold: 2 seconds)
+- **API Error Rate**: `api-high-error-rate-dev` (Threshold: 10 errors per 5 minutes)
+- **API Request Volume**: `api-low-request-count-dev` (Detects potential outages)
+
+**Custom Metrics Sent:**
+- ResponseTime, RequestCount by status code, ErrorCount, BusinessMetrics
+
+### 4.4 Security & Compliance Monitoring
+
+#### 🛡️ WAF (Web Application Firewall) Metrics
+
+**Security Monitoring:**
+- **Namespace**: AWS/WAFV2
+- **Metrics**: AllowedRequests, BlockedRequests, SampledRequests
+- **Coverage**: Both CloudFront and ALB WAF rules
+
+### 4.5 Observability & Tracing
+
+#### 🔍 X-Ray Distributed Tracing
+- **Service Map**: Visual service interactions
+- **Trace Segments**: Individual request traces
+- **Performance Insights**: Response time analysis
+- **Error Analysis**: Detailed error tracking
+
+#### 📊 Athena Log Analytics
+- **ALB Access Logs**: Query load balancer patterns
+- **CloudFront Logs**: Analyze CDN performance
+- **Application Logs**: Search application events
+
+### 4.6 Notification & Alerting
+
+#### 📧 SNS Alert Configuration
+- **Topic**: `arn:aws:sns:us-east-1:967746377724:alerts`
+- **Email**: bardh315@gmail.com (confirmed subscription)
+- **Slack**: Configurable via webhook environment variable
+- **Alert Types**: ALARM, OK, INSUFFICIENT_DATA states
+
+### 4.7 CloudWatch Dashboards
+
+#### 🎯 Main Observability Dashboard: `ecommerce-observability-dashboard`
+**Widgets Include:**
+1. **ECS Service Metrics**: CPU/Memory utilization
+2. **ALB Performance**: Latency, request count, error rates
+3. **RDS Database Metrics**: CPU, connections, storage
+4. **CloudFront CDN Metrics**: Requests, cache hit ratio, errors
+
+### 4.8 Auto-Scaling Integration
+
+#### 📈 Dynamic Scaling Based on Metrics
+- **ECS CPU-based scaling**: Scale up/down based on CPU utilization
+- **ECS Memory-based scaling**: Scale up/down based on memory usage
+- **ALB Target tracking**: Automatically adjust ECS tasks based on ALB metrics
+
+### 4.9 Data Retention Policies
+
+#### 📅 Retention Configuration
+- **CloudWatch Logs**: 7 days (configurable via log_retention_days)
+- **Metrics**: 15 months (AWS default)
+- **Alarms History**: 30 days
+- **Dashboard Data**: Real-time + historical views
+
+### Evidence Screenshots
+
+#### CloudWatch Dashboard Screenshot
 ![CloudWatch Dashboard Placeholder](CLOUDWATCH_DASHBOARD.png)
 
-### SNS Alarm Evidence
+#### SNS Alarm Evidence
 ![SNS Alarm Placeholder](SNS_ALARM.png)
-
-### Athena Query Results
-![Athena Query Results Placeholder](ATHENA_RESULTS.png)
 
 ---
 

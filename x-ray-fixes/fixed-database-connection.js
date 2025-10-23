@@ -8,7 +8,7 @@ try {
     AWS = AWSXRay.captureAWS(AWS);
     console.log('🔍 X-Ray SDK loaded for database operations');
 } catch (error) {
-    console.log('⚠️  X-Ray not available for database operations:', error.message);
+    console.log('⚠️  X-Ray not available for database operations');
 }
 
 class DatabaseConnection {
@@ -146,7 +146,7 @@ class DatabaseConnection {
             }
         } catch (error) {
             // Silently continue without X-Ray if segment not available
-            // This is normal for health checks and other non-request contexts
+            console.log('🔍 No X-Ray segment available for database query');
         }
 
         try {
@@ -199,6 +199,7 @@ class DatabaseConnection {
             }
         } catch (error) {
             // Silently continue without X-Ray if segment not available
+            console.log('🔍 No X-Ray segment available for database transaction');
         }
 
         try {

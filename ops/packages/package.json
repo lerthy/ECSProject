@@ -12,8 +12,8 @@
         "build:server": "node api/server.js",
         "preview": "vite preview web",
         "test": "jest",
-        "lint": "eslint src/",
-        "lint:fix": "eslint src/ --fix",
+        "lint": "eslint web/src/",
+        "lint:fix": "eslint web/src/ --fix",
         "serve": "npm start"
     },
     "keywords": [

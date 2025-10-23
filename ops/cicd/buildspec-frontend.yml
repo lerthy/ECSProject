@@ -42,14 +42,30 @@ phases:
       - echo Running unit tests...
       - npm test -- --coverage --watchAll=false || echo "Tests skipped - no tests configured"
       - echo Building frontend with Vite...
+      - echo "Current working directory before build:"
+      - pwd
       - npm run build
       - echo Verifying build artifacts...
-      - ls -la web-dist/
+      - echo "Checking for build output..."
+      - ls -la web-dist/ 2>/dev/null || echo "web-dist not found, checking web/dist/"
+      - ls -la web/dist/ 2>/dev/null || echo "web/dist not found, checking current directory"
+      - echo "Current directory structure after build:"
+      - ls -la
 
   build:
     commands:
       - echo Syncing frontend assets to S3...
-      - aws s3 sync ./web-dist s3://$FRONTEND_BUCKET --delete --cache-control "public, max-age=31536000"
+      - |
+        if [ -d "web-dist" ]; then
+          echo "Found web-dist directory, syncing to S3..."
+          aws s3 sync ./web-dist s3://$FRONTEND_BUCKET --delete --cache-control "public, max-age=31536000"
+        elif [ -d "web/dist" ]; then
+          echo "Found web/dist directory, syncing to S3..."
+          aws s3 sync ./web/dist s3://$FRONTEND_BUCKET --delete --cache-control "public, max-age=31536000"
+        else
+          echo "ERROR: No build output directory found!"
+          exit 1
+        fi
       - echo Creating CloudFront invalidation...
       - >
         INVALIDATION_ID=$(aws cloudfront create-invalidation 
@@ -69,6 +85,7 @@ phases:
 artifacts:
   files:
     - ops/packages/web-dist/**/*
+    - ops/packages/web/dist/**/*
     - ops/packages/coverage/**/*
   name: frontend-artifacts
 

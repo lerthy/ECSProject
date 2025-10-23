@@ -343,6 +343,15 @@ resource "aws_iam_role_policy" "codebuild" {
           "codebuild:DescribeReports"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:DescribeKey",
+          "kms:ListKeys",
+          "kms:ListAliases"
+        ]
+        Resource = "*"
       }
     ]
   })

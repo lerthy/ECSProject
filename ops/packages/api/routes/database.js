@@ -187,7 +187,7 @@ router.post('/populate', async (req, res) => {
         }
 
         // Create tables and populate data
-        const { populateDatabase } = require('../../scripts/populate-rds');
+        const { populateDatabase } = require('../scripts/populate-rds');
 
         // Run population synchronously to ensure completion
         await populateDatabase();

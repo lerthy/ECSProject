@@ -33,20 +33,22 @@ resource "aws_cloudtrail" "main" {
 # AWS Config
 resource "aws_config_configuration_recorder" "main" {
   name     = "main-recorder"
-  role_arn = data.aws_iam_role.config.arn
+  role_arn = aws_iam_role.config.arn
 }
 
-# Use data source for existing IAM role
-data "aws_iam_role" "config" {
-  name = "config-recorder-role"
-}
-
-# Only create the role if it doesn't exist
+# IAM role for Config with lifecycle to prevent destruction
 resource "aws_iam_role" "config" {
-  count              = data.aws_iam_role.config.name == "" ? 1 : 0
   name               = "config-recorder-role"
   assume_role_policy = data.aws_iam_policy_document.config_assume_role_policy.json
   tags               = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      name,
+      tags
+    ]
+  }
 }
 
 data "aws_iam_policy_document" "config_assume_role_policy" {
@@ -60,7 +62,7 @@ data "aws_iam_policy_document" "config_assume_role_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "config_policy" {
-  role       = data.aws_iam_role.config.name
+  role       = aws_iam_role.config.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWS_ConfigRole"
 }
 
@@ -70,19 +72,21 @@ resource "aws_config_delivery_channel" "main" {
   depends_on     = [aws_config_configuration_recorder.main]
 }
 
-# Secrets Manager Example - Use data source for existing secret
-data "aws_secretsmanager_secret" "app" {
-  name = "app/secret"
-}
-
-# Only create the secret if it doesn't exist
+# Secrets Manager with lifecycle to prevent destruction
 resource "aws_secretsmanager_secret" "app" {
-  count = data.aws_secretsmanager_secret.app.name == "" ? 1 : 0
-  name  = "app/secret"
-  tags  = var.tags
+  name = "app/secret"
+  tags = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      name,
+      tags
+    ]
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "app" {
-  secret_id     = data.aws_secretsmanager_secret.app.id
-  secret_string = var.app_secret_string != "" ? var.app_secret_string : "default-secret-value"
+  secret_id     = aws_secretsmanager_secret.app.id
+  secret_string = var.app_secret_string
 }

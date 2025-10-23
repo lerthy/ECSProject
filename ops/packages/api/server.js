@@ -13,6 +13,7 @@ const productRoutes = require('./routes/products');
 const cartRoutes = require('./routes/cart');
 const checkoutRoutes = require('./routes/checkout');
 const healthRoutes = require('./routes/health');
+const databaseRoutes = require('./routes/database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -80,6 +81,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/orders', checkoutRoutes);
+app.use('/api/database', databaseRoutes);
 
 // Frontend route - serve the main HTML file
 app.get('/', (req, res) => {
@@ -96,7 +98,15 @@ app.get('/api', (req, res) => {
             cart: '/api/cart',
             checkout: '/api/checkout',
             orders: '/api/orders',
+            database: '/api/database',
             health: '/health'
+        },
+        database_endpoints: {
+            status: '/api/database/status',
+            tables: '/api/database/tables',
+            products: '/api/database/products',
+            categories: '/api/database/categories',
+            populate: '/api/database/populate (POST)'
         }
     });
 });

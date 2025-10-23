@@ -393,6 +393,13 @@ variable "github_branch" {
 #   default     = "YOUR_GITHUB_TOKEN_HERE"
 # }
 
+# VPC Configuration
+variable "use_existing_vpc" {
+  description = "Whether to use existing VPCs instead of creating new ones (to avoid VPC limits)"
+  type        = bool
+  default     = true
+}
+
 # =====================
 # RDS Database Variables
 # =====================

@@ -1,6 +1,14 @@
 # AWS WAF for CloudFront and ALB
 
+# Use data source for existing WAF WebACL
+data "aws_wafv2_web_acl" "cloudfront" {
+  name  = "cloudfront-waf"
+  scope = "CLOUDFRONT"
+}
+
+# Only create the WebACL if it doesn't exist
 resource "aws_wafv2_web_acl" "cloudfront" {
+  count = data.aws_wafv2_web_acl.cloudfront.name == "" ? 1 : 0
   name        = "cloudfront-waf"
   description = "WAF for CloudFront distribution"
   scope       = "CLOUDFRONT"
@@ -32,7 +40,15 @@ resource "aws_wafv2_web_acl" "cloudfront" {
   }
 }
 
+# Use data source for existing WAF WebACL
+data "aws_wafv2_web_acl" "alb" {
+  name  = "alb-waf"
+  scope = "REGIONAL"
+}
+
+# Only create the WebACL if it doesn't exist
 resource "aws_wafv2_web_acl" "alb" {
+  count = data.aws_wafv2_web_acl.alb.name == "" ? 1 : 0
   name        = "alb-waf"
   description = "WAF for ALB"
   scope       = "REGIONAL"
@@ -69,10 +85,10 @@ resource "aws_wafv2_web_acl" "alb" {
 
 resource "aws_wafv2_web_acl_association" "alb" {
   resource_arn = module.alb.alb_arn
-  web_acl_arn  = aws_wafv2_web_acl.alb.arn
+  web_acl_arn  = data.aws_wafv2_web_acl.alb.arn
 }
 
 resource "aws_wafv2_web_acl_association" "alb_standby" {
   resource_arn = module.alb_standby.alb_arn
-  web_acl_arn  = aws_wafv2_web_acl.alb.arn
+  web_acl_arn  = data.aws_wafv2_web_acl.alb.arn
 }

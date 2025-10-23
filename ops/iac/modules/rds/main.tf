@@ -10,7 +10,7 @@ resource "aws_db_instance" "cross_region_replica" {
 
   # Monitoring
   monitoring_interval = var.monitoring_interval
-  monitoring_role_arn = var.monitoring_interval > 0 ? aws_iam_role.rds_enhanced_monitoring.arn : null
+  monitoring_role_arn = var.monitoring_interval > 0 ? data.aws_iam_role.rds_enhanced_monitoring.arn : null
 
   # Performance Insights
   performance_insights_enabled          = var.performance_insights_enabled
@@ -34,8 +34,14 @@ resource "random_password" "master_password" {
   special = true
 }
 
-# Store the master password in AWS Secrets Manager
+# Use data source for existing RDS credentials secret
+data "aws_secretsmanager_secret" "rds_credentials" {
+  name = "${var.name}-rds-credentials"
+}
+
+# Only create the secret if it doesn't exist
 resource "aws_secretsmanager_secret" "rds_credentials" {
+  count = data.aws_secretsmanager_secret.rds_credentials.name == "" ? 1 : 0
   name                    = "${var.name}-rds-credentials"
   description             = "RDS master credentials for ${var.name}"
   recovery_window_in_days = 0 # For dev environment
@@ -43,7 +49,7 @@ resource "aws_secretsmanager_secret" "rds_credentials" {
 }
 
 resource "aws_secretsmanager_secret_version" "rds_credentials" {
-  secret_id = aws_secretsmanager_secret.rds_credentials.id
+  secret_id = data.aws_secretsmanager_secret.rds_credentials.id
   secret_string = jsonencode({
     username = var.master_username
     password = random_password.master_password.result
@@ -57,8 +63,14 @@ resource "aws_db_subnet_group" "this" {
   tags       = merge(var.tags, { Name = "${var.name}-db-subnet-group" })
 }
 
-# DB Parameter Group for optimization
+# Use data source for existing DB parameter group
+data "aws_db_parameter_group" "this" {
+  name = "${var.name}-db-parameter-group"
+}
+
+# Only create the parameter group if it doesn't exist
 resource "aws_db_parameter_group" "this" {
+  count = data.aws_db_parameter_group.this.name == "" ? 1 : 0
   family = "postgres15"
   name   = "${var.name}-db-parameter-group"
 
@@ -111,8 +123,14 @@ resource "aws_db_parameter_group" "this" {
   tags = var.tags
 }
 
-# Enhanced monitoring role
+# Use data source for existing RDS enhanced monitoring role
+data "aws_iam_role" "rds_enhanced_monitoring" {
+  name = "${var.name}-rds-enhanced-monitoring"
+}
+
+# Only create the role if it doesn't exist
 resource "aws_iam_role" "rds_enhanced_monitoring" {
+  count = data.aws_iam_role.rds_enhanced_monitoring.name == "" ? 1 : 0
   name = "${var.name}-rds-enhanced-monitoring"
 
   assume_role_policy = jsonencode({
@@ -132,7 +150,7 @@ resource "aws_iam_role" "rds_enhanced_monitoring" {
 }
 
 resource "aws_iam_role_policy_attachment" "rds_enhanced_monitoring" {
-  role       = aws_iam_role.rds_enhanced_monitoring.name
+  role       = data.aws_iam_role.rds_enhanced_monitoring.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }
 
@@ -195,9 +213,9 @@ resource "aws_db_instance" "primary" {
   auto_minor_version_upgrade = var.auto_minor_version_upgrade
 
   # Performance and Monitoring
-  parameter_group_name = aws_db_parameter_group.this.name
+  parameter_group_name = data.aws_db_parameter_group.this.name
   monitoring_interval  = var.monitoring_interval
-  monitoring_role_arn  = var.monitoring_interval > 0 ? aws_iam_role.rds_enhanced_monitoring.arn : null
+  monitoring_role_arn  = var.monitoring_interval > 0 ? data.aws_iam_role.rds_enhanced_monitoring.arn : null
 
   # Performance Insights
   performance_insights_enabled          = var.performance_insights_enabled
@@ -242,7 +260,7 @@ resource "aws_db_instance" "read_replica" {
 
   # Monitoring
   monitoring_interval = var.monitoring_interval
-  monitoring_role_arn = var.monitoring_interval > 0 ? aws_iam_role.rds_enhanced_monitoring.arn : null
+  monitoring_role_arn = var.monitoring_interval > 0 ? data.aws_iam_role.rds_enhanced_monitoring.arn : null
 
   # Performance Insights
   performance_insights_enabled          = var.performance_insights_enabled

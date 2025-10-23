@@ -13,7 +13,14 @@ resource "aws_ecs_cluster" "this" {
   tags = var.tags
 }
 
+# Use data source for existing ECS task execution role
+data "aws_iam_role" "ecs_task_execution" {
+  name = "${var.name}-ecs-task-execution"
+}
+
+# Only create the role if it doesn't exist
 resource "aws_iam_role" "ecs_task_execution" {
+  count = data.aws_iam_role.ecs_task_execution.name == "" ? 1 : 0
   name               = "${var.name}-ecs-task-execution"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role_policy.json
   tags               = var.tags
@@ -30,25 +37,25 @@ data "aws_iam_policy_document" "ecs_task_assume_role_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
-  role       = aws_iam_role.ecs_task_execution.name
+  role       = data.aws_iam_role.ecs_task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 # Added for observability completion: Athena and S3 log access
 resource "aws_iam_role_policy_attachment" "ecs_athena_access" {
-  role       = aws_iam_role.ecs_task_execution.name
+  role       = data.aws_iam_role.ecs_task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonAthenaFullAccess"
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_s3_logs_access" {
-  role       = aws_iam_role.ecs_task_execution.name
+  role       = data.aws_iam_role.ecs_task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
 }
 
 # IAM policy for Secrets Manager access
 resource "aws_iam_role_policy" "ecs_secrets_manager" {
   name = "${var.name}-ecs-secrets-manager"
-  role = aws_iam_role.ecs_task_execution.id
+  role = data.aws_iam_role.ecs_task_execution.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -70,7 +77,7 @@ resource "aws_iam_role_policy" "ecs_secrets_manager" {
 # IAM policy for X-Ray tracing
 resource "aws_iam_role_policy" "ecs_xray" {
   name = "${var.name}-ecs-xray"
-  role = aws_iam_role.ecs_task_execution.id
+  role = data.aws_iam_role.ecs_task_execution.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -90,7 +97,7 @@ resource "aws_iam_role_policy" "ecs_xray" {
 # IAM policy for CloudWatch custom metrics
 resource "aws_iam_role_policy" "ecs_cloudwatch" {
   name = "${var.name}-ecs-cloudwatch"
-  role = aws_iam_role.ecs_task_execution.id
+  role = data.aws_iam_role.ecs_task_execution.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -114,8 +121,8 @@ resource "aws_ecs_task_definition" "api" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.cpu
   memory                   = var.memory
-  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
-  task_role_arn            = aws_iam_role.ecs_task_execution.arn
+  execution_role_arn       = data.aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = data.aws_iam_role.ecs_task_execution.arn
   container_definitions    = var.container_definitions
   tags                     = var.tags
 }

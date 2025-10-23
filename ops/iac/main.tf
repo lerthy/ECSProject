@@ -310,7 +310,7 @@ module "cloudfront" {
   source                  = "./modules/cloudfront"
   s3_domain_name          = module.s3.frontend_bucket_domain_name
   logs_bucket_domain_name = module.s3.cloudfront_logs_bucket_domain_name
-  web_acl_id              = aws_wafv2_web_acl.cloudfront.arn
+  web_acl_id              = data.aws_wafv2_web_acl.cloudfront.arn
   tags                    = var.tags
 }
 
@@ -320,7 +320,7 @@ module "cloudfront_dr" {
   providers               = { aws = aws.dr }
   s3_domain_name          = module.s3_dr.frontend_bucket_domain_name
   logs_bucket_domain_name = module.s3_dr.cloudfront_logs_bucket_domain_name
-  web_acl_id              = aws_wafv2_web_acl.cloudfront.arn
+  web_acl_id              = data.aws_wafv2_web_acl.cloudfront.arn
   tags                    = var.tags
 }
 
@@ -451,15 +451,17 @@ module "cicd" {
 }
 
 module "ecr" {
-  source      = "./modules/ecr"
-  environment = var.environment
-  tags        = var.tags
+  source            = "./modules/ecr"
+  environment       = var.environment
+  tags              = var.tags
+  create_repository = false
 }
 
 # ECR in eu-north-1 (DR region)
 module "ecr_dr" {
-  source      = "./modules/ecr"
-  providers   = { aws = aws.dr }
-  environment = var.environment
-  tags        = var.tags
+  source            = "./modules/ecr"
+  providers         = { aws = aws.dr }
+  environment       = var.environment
+  tags              = var.tags
+  create_repository = false
 }

@@ -3,7 +3,7 @@ resource "aws_lambda_function" "slack_notifier" {
   count            = var.slack_webhook != "" ? 1 : 0
   filename         = "${path.module}/slack_notifier.zip"
   function_name    = "sns-slack-notifier-${var.name}"
-  role             = aws_iam_role.lambda_slack_notifier[0].arn
+  role             = data.aws_iam_role.lambda_slack_notifier[0].arn
   handler          = "index.handler"
   runtime          = "python3.12"
   source_code_hash = filebase64sha256("${path.module}/slack_notifier.zip")
@@ -15,8 +15,15 @@ resource "aws_lambda_function" "slack_notifier" {
   tags = var.tags
 }
 
-resource "aws_iam_role" "lambda_slack_notifier" {
+# Use data source for existing Lambda Slack notifier role
+data "aws_iam_role" "lambda_slack_notifier" {
   count = var.slack_webhook != "" ? 1 : 0
+  name  = "lambda-sns-slack-notifier-${var.name}"
+}
+
+# Only create the role if it doesn't exist
+resource "aws_iam_role" "lambda_slack_notifier" {
+  count = var.slack_webhook != "" && data.aws_iam_role.lambda_slack_notifier[0].name == "" ? 1 : 0
   name  = "lambda-sns-slack-notifier-${var.name}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -31,7 +38,7 @@ resource "aws_iam_role" "lambda_slack_notifier" {
 
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   count      = var.slack_webhook != "" ? 1 : 0
-  role       = aws_iam_role.lambda_slack_notifier[0].name
+  role       = data.aws_iam_role.lambda_slack_notifier[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 

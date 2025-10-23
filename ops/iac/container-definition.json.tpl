@@ -32,7 +32,7 @@
         },
         "essential": true,
         "healthCheck": {
-            "command": ["CMD-SHELL", "curl -f http://localhost:${container_port}/health || exit 1"],
+            "command": ["CMD-SHELL", "node -e \"const http = require('http'); const options = { hostname: 'localhost', port: ${container_port}, path: '/health', timeout: 3000 }; const req = http.request(options, (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); req.on('error', () => process.exit(1)); req.on('timeout', () => { req.destroy(); process.exit(1); }); req.setTimeout(3000); req.end();\""],
             "interval": 30,
             "timeout": 5,
             "retries": 3,

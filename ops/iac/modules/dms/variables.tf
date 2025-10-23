@@ -106,3 +106,15 @@ variable "alarm_actions" {
   description = "List of SNS topic ARNs for alarm actions"
   default     = []
 }
+
+variable "vpc_security_group_ids" {
+  type        = list(string)
+  description = "List of VPC security group IDs for the DMS replication instance"
+  default     = []
+}
+
+variable "subnet_group_id" {
+  type        = string
+  description = "DMS subnet group ID"
+  default     = ""
+}

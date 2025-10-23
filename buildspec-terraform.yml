@@ -38,11 +38,27 @@ phases:
 
   build:
     commands:
+      - echo Importing existing resources to avoid conflicts...
+      - terraform import aws_iam_role.config config-recorder-role || true
+      - terraform import module.cicd.aws_iam_role.codepipeline ecommerce-codepipeline-role || true
+      - terraform import module.cicd.aws_iam_role.codebuild ecommerce-codebuild-role || true
+      - terraform import aws_secretsmanager_secret.app app/secret || true
+      - terraform import module.s3.aws_s3_bucket.frontend ecommerce-frontend-dev || true
+      - terraform import module.s3.aws_s3_bucket.alb_logs ecommerce-alb-logs-dev || true
+      - terraform import module.s3.aws_s3_bucket.cloudfront_logs ecommerce-cloudfront-logs-dev || true
+      - terraform import module.ecr.aws_ecr_repository.backend ecommerce-backend-dev || true
+      - terraform import module.cloudwatch.aws_cloudwatch_log_group.ecs /ecs/ecommerce-ecs-dev || true
+      - terraform import module.athena.aws_athena_workgroup.logs ecommerce_workgroup || true
+      - terraform import module.xray.aws_xray_group.default ecommerce-ecs-dev || true
+      - terraform import module.rds.aws_db_subnet_group.this ecommerce-ecs-dev-db-db-subnet-group || true
+      - terraform import module.rds.aws_db_parameter_group.this ecommerce-ecs-dev-db-db-parameter-group || true
+      - terraform import module.rds.aws_iam_role.rds_enhanced_monitoring ecommerce-ecs-dev-db-rds-enhanced-monitoring || true
+      - terraform import module.rds.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-rds-credentials || true
+      - terraform import module.ecs.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-ecs-task-execution || true
+      - terraform import module.sns.aws_iam_role.lambda_slack_notifier[0] lambda-sns-slack-notifier-alerts || true
+      - terraform import module.xray.aws_iam_role.xray ecommerce-ecs-dev-xray-role || true
       - echo Creating and applying Terraform plan...
-      - terraform plan -detailed-exitcode -out=tfplan || PLAN_EXIT_CODE=$?
-      - if [ "$PLAN_EXIT_CODE" = "2" ]; then echo "Plan shows changes to be applied"; fi
-      - if [ "$PLAN_EXIT_CODE" = "1" ]; then echo "Plan failed with errors"; exit 1; fi
-      - if [ "$PLAN_EXIT_CODE" = "0" ]; then echo "No changes to apply"; fi
+      - terraform plan -out=tfplan
       - terraform show -json tfplan > tfplan.json
       - echo Applying Terraform changes...
       - terraform apply -auto-approve tfplan

@@ -25,6 +25,16 @@ resource "aws_db_instance" "cross_region_replica" {
 
   depends_on = [aws_security_group.rds]
 }
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 3.0"
+    }
+  }
+}
+
 # RDS Module - PostgreSQL with High Availability and Reliability
 
 # Random password for the master database

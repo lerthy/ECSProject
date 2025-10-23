@@ -24,7 +24,7 @@ module "dms" {
   replication_instance_id    = "cross-region-dms-instance"
   allocated_storage          = 50
   replication_instance_class = "dms.t3.medium"
-  engine_version             = "3.4.7"
+      engine_version             = "3.6.1"
   publicly_accessible        = false
   multi_az                   = true
   auto_minor_version_upgrade = true

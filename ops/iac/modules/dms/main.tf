@@ -1,3 +1,35 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 3.0"
+    }
+  }
+}
+
+# DMS IAM Role for VPC access
+resource "aws_iam_role" "dms_vpc_role" {
+  name = "dms-vpc-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "dms.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "dms_vpc_role_policy" {
+  role       = aws_iam_role.dms_vpc_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonDMSVPCManagementRole"
+}
+
 resource "aws_dms_replication_instance" "this" {
   replication_instance_id    = var.replication_instance_id
   allocated_storage          = var.allocated_storage
@@ -6,6 +38,7 @@ resource "aws_dms_replication_instance" "this" {
   publicly_accessible        = var.publicly_accessible
   multi_az                   = var.multi_az
   auto_minor_version_upgrade = var.auto_minor_version_upgrade
+  vpc_security_group_ids     = var.vpc_security_group_ids
   tags                       = var.tags
 }
 

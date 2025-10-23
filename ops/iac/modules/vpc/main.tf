@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 3.0"
+    }
+  }
+}
+
 # VPC Module
 resource "aws_vpc" "this" {
   cidr_block           = var.cidr_block

@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 3.0"
+    }
+  }
+}
+
 # ECS (Fargate) Module
 resource "aws_ecs_cluster" "this" {
   name = var.name

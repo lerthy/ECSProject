@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 3.0"
+    }
+  }
+}
+
 # X-Ray Module
 resource "aws_xray_group" "default" {
   filter_expression = "service(\"${var.name}\")"

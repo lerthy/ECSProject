@@ -42,7 +42,7 @@ Resources:
               Configuration:
                 Owner: !Ref GitHubOwner
                 Repo: !Ref GitHubRepo
-                Branch: main
+                Branch: devLerdi
                 OAuthToken: !Ref GitHubToken
         - Name: Infrastructure
           Actions:

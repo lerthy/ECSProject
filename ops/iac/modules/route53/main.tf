@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 3.0"
+    }
+  }
+}
+
 # Route 53 Failover Module
 
 resource "aws_route53_health_check" "alb_primary" {

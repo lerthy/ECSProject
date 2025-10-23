@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 3.0"
+    }
+  }
+}
+
 # CloudWatch Module
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.name}"

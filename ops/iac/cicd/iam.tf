@@ -335,7 +335,12 @@ resource "aws_iam_role_policy" "codebuild" {
           "codebuild:UpdateReportGroup",
           "codebuild:DeleteReportGroup",
           "codebuild:ListReportGroups",
-          "codebuild:DescribeReportGroups"
+          "codebuild:DescribeReportGroups",
+          "codebuild:CreateReport",
+          "codebuild:UpdateReport",
+          "codebuild:DeleteReport",
+          "codebuild:ListReports",
+          "codebuild:DescribeReports"
         ]
         Resource = "*"
       }

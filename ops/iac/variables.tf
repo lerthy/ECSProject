@@ -24,36 +24,44 @@ variable "replicate_source_db" {
 variable "rds_source_username" {
   description = "Username for source RDS DB (us-east-1)"
   type        = string
+  default     = "admin"
 }
 variable "rds_source_password" {
   description = "Password for source RDS DB (us-east-1)"
   type        = string
   sensitive   = true
+  default     = "password123"
 }
 variable "rds_source_endpoint" {
   description = "Endpoint for source RDS DB (us-east-1)"
   type        = string
+  default     = "ecommerce-db-dev.cluster-xyz.us-east-1.rds.amazonaws.com"
 }
 variable "rds_source_db_name" {
   description = "Database name for source RDS DB (us-east-1)"
   type        = string
+  default     = "ecommerce"
 }
 variable "rds_target_username" {
   description = "Username for target RDS DB (eu-north-1)"
   type        = string
+  default     = "admin"
 }
 variable "rds_target_password" {
   description = "Password for target RDS DB (eu-north-1)"
   type        = string
   sensitive   = true
+  default     = "password123"
 }
 variable "rds_target_endpoint" {
   description = "Endpoint for target RDS DB (eu-north-1)"
   type        = string
+  default     = "ecommerce-db-dr.cluster-xyz.eu-north-1.rds.amazonaws.com"
 }
 variable "rds_target_db_name" {
   description = "Database name for target RDS DB (eu-north-1)"
   type        = string
+  default     = "ecommerce"
 }
 # Optional: CloudFront aliases
 variable "aliases" {
@@ -145,6 +153,7 @@ variable "app_secret_string" {
 variable "region" {
   description = "AWS region"
   type        = string
+  default     = "us-east-1"
 }
 
 variable "tags" {
@@ -157,10 +166,12 @@ variable "tags" {
 variable "vpc_name" {
   description = "Name prefix for VPC"
   type        = string
+  default     = "observability-vpc-dev"
 }
 variable "vpc_cidr_block" {
   description = "VPC CIDR block"
   type        = string
+  default     = "10.1.0.0/16"
 
   # Added variable validation per best practices
   validation {
@@ -171,127 +182,155 @@ variable "vpc_cidr_block" {
 variable "public_subnets" {
   description = "List of public subnet CIDRs"
   type        = list(string)
+  default     = ["10.1.1.0/24", "10.1.2.0/24"]
 }
 variable "private_subnets" {
   description = "List of private subnet CIDRs"
   type        = list(string)
+  default     = ["10.1.101.0/24", "10.1.102.0/24"]
 }
 variable "db_subnets" {
   description = "List of database subnet CIDRs"
   type        = list(string)
+  default     = ["10.1.201.0/24", "10.1.202.0/24"]
 }
 variable "azs" {
   description = "List of availability zones"
   type        = list(string)
+  default     = ["us-east-1a", "us-east-1b"]
 }
 
 # DR (eu-north-1) variables
 variable "vpc_name_dr" {
   description = "Name prefix for VPC in eu-north-1 (DR region)"
   type        = string
+  default     = "observability-vpc-dr"
 }
 variable "vpc_cidr_block_dr" {
   description = "VPC CIDR block for eu-north-1 (DR region)"
   type        = string
+  default     = "10.2.0.0/16"
 }
 variable "public_subnets_dr" {
   description = "List of public subnet CIDRs for eu-north-1 (DR region)"
   type        = list(string)
+  default     = ["10.2.1.0/24", "10.2.2.0/24"]
 }
 variable "private_subnets_dr" {
   description = "List of private subnet CIDRs for eu-north-1 (DR region)"
   type        = list(string)
+  default     = ["10.2.101.0/24", "10.2.102.0/24"]
 }
 variable "db_subnets_dr" {
   description = "List of database subnet CIDRs for eu-north-1 (DR region)"
   type        = list(string)
+  default     = ["10.2.201.0/24", "10.2.202.0/24"]
 }
 variable "azs_dr" {
   description = "List of availability zones for eu-north-1 (DR region)"
   type        = list(string)
+  default     = ["eu-north-1a", "eu-north-1b"]
 }
 
 variable "frontend_bucket_name_dr" {
   description = "Name for frontend S3 bucket in eu-north-1 (DR region)"
   type        = string
+  default     = "ecommerce-frontend-dr"
 }
 variable "alb_logs_bucket_name_dr" {
   description = "Name for ALB logs S3 bucket in eu-north-1 (DR region)"
   type        = string
+  default     = "ecommerce-alb-logs-dr"
 }
 variable "cloudfront_logs_bucket_name_dr" {
   description = "Name for CloudFront logs S3 bucket in eu-north-1 (DR region)"
   type        = string
+  default     = "ecommerce-cloudfront-logs-dr"
 }
 
 # S3
 variable "frontend_bucket_name" {
   description = "Name for frontend S3 bucket"
   type        = string
+  default     = "ecommerce-frontend-dev"
 }
 variable "alb_logs_bucket_name" {
   description = "Name for ALB logs S3 bucket"
   type        = string
+  default     = "ecommerce-alb-logs-dev"
 }
 variable "cloudfront_logs_bucket_name" {
   description = "Name for CloudFront logs S3 bucket"
   type        = string
+  default     = "ecommerce-cloudfront-logs-dev"
 }
 
 # ALB
 variable "alb_name" {
   description = "Name prefix for ALB"
   type        = string
+  default     = "ecommerce-alb-dev"
 }
 variable "target_port" {
   description = "Target group port"
   type        = number
+  default     = 80
 }
 variable "health_check_path" {
   description = "Health check path"
   type        = string
+  default     = "/health"
 }
 
 # Route 53 and ALB DNS variables for failover
 variable "route53_zone_id" {
   description = "Route 53 Hosted Zone ID for API DNS name"
   type        = string
+  default     = "Z07612111621S1WVA4637"
 }
 
 variable "api_dns_name" {
   description = "DNS name for the API (e.g., api.example.com)"
   type        = string
+  default     = "api-dev.lerdi.com"
 }
 
 variable "alb_zone_id" {
   description = "ALB DNS zone ID (from AWS documentation for your region)"
   type        = string
+  default     = "Z35SXDOTRQ7X7K"
 }
 
 # ECS
 variable "ecs_name" {
   description = "Name prefix for ECS"
   type        = string
+  default     = "ecommerce-ecs-dev"
 }
 variable "container_name" {
   description = "Container name"
   type        = string
+  default     = "ecommerce-api"
 }
 variable "container_port" {
   description = "Container port"
   type        = number
+  default     = 3000
 }
 variable "cpu" {
   description = "CPU units"
   type        = string
+  default     = "256"
 }
 variable "memory" {
   description = "Memory (MB)"
   type        = string
+  default     = "512"
 }
 variable "desired_count" {
   description = "Number of ECS tasks"
   type        = number
+  default     = 1
 }
 
 # CloudFront
@@ -300,37 +339,44 @@ variable "desired_count" {
 variable "log_retention_days" {
   description = "Log retention in days"
   type        = number
+  default     = 7
 }
 
 # SNS
 variable "sns_slack_webhook" {
   description = "SNS Slack webhook URL"
   type        = string
+  default     = "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
 }
 
 # Athena
 variable "athena_database_name" {
   description = "Athena database name"
   type        = string
+  default     = "ecommerce_logs"
 }
 variable "athena_workgroup_name" {
   description = "Athena workgroup name"
   type        = string
+  default     = "ecommerce_workgroup"
 }
 variable "athena_output_location" {
   description = "Athena query output S3 location"
   type        = string
+  default     = "s3://ecommerce-athena-results/"
 }
 
 # CI/CD Variables
 variable "github_owner" {
   description = "GitHub repository owner"
   type        = string
+  default     = "lerthy"
 }
 
 variable "github_repo" {
   description = "GitHub repository name"
   type        = string
+  default     = "ECSProject"
 }
 
 variable "github_branch" {
@@ -343,6 +389,7 @@ variable "github_token" {
   description = "GitHub OAuth token"
   type        = string
   sensitive   = true
+  default     = "YOUR_GITHUB_TOKEN_HERE"
 }
 
 # =====================

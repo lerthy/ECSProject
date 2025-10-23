@@ -1,7 +1,8 @@
 // E-commerce Frontend Application
 class ECommerceApp {
     constructor() {
-        this.baseURL = '/api';
+        // API URL configuration - use environment variable or fallback
+        this.baseURL = window.API_URL || 'http://ecommerce-alb-dev-1678197423.us-east-1.elb.amazonaws.com/api';
         this.currentUserId = 'user123'; // In production, this would come from authentication
         this.currentPage = 'products';
         this.cart = { items: [], total: 0 };

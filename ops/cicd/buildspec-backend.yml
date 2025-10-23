@@ -37,8 +37,8 @@ phases:
       - ls -la ops/ || echo "ops directory not found"
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO
-      - echo Logging in to Amazon ECR Public Gallery...
-      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+      - echo Attempting to login to Amazon ECR Public Gallery...
+      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws || echo "ECR Public login failed - will try Docker Hub with retry logic"
       - echo Running code quality checks...
       - |
         if [ -d "ops/packages/api" ]; then
@@ -91,8 +91,24 @@ phases:
       - ls -la api/ || echo "api directory not found"
       - ls -la web/ || echo "web directory not found"
       - echo "Building Docker images with correct context..."
-      - docker build -f Dockerfile -t $ECR_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION .
-      - docker build -f Dockerfile -t $ECR_REPO:latest .
+      - echo "Attempting Docker build with retry logic for rate limiting..."
+      - |
+        for i in 1 2 3; do
+          echo "Docker build attempt $i/3"
+          if docker build -f Dockerfile -t $ECR_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION .; then
+            echo "Docker build succeeded on attempt $i"
+            break
+          else
+            echo "Docker build failed on attempt $i"
+            if [ $i -eq 3 ]; then
+              echo "Docker build failed after 3 attempts"
+              exit 1
+            fi
+            echo "Waiting 30 seconds before retry..."
+            sleep 30
+          fi
+        done
+      - docker tag $ECR_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION $ECR_REPO:latest
       - echo Running security scan on Docker image...
       - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --exit-code 0 --no-progress --format json --output trivy-results.json $ECR_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION || true
       - echo Pushing Docker images to ECR...

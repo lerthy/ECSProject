@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile optimized for ECS/ECR
-FROM public.ecr.aws/docker/library/node:18-alpine AS builder
+FROM node:18-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -17,7 +17,7 @@ RUN mkdir -p ./web-build && \
     cp -r ./web/src ./web-build/
 
 # Production stage
-FROM public.ecr.aws/docker/library/node:18-alpine AS production
+FROM node:18-alpine AS production
 
 # Set working directory
 WORKDIR /app

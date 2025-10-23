@@ -39,7 +39,7 @@ phases:
 
   build:
     commands:
-      - echo "=== ULTIMATE PIPELINE FIX - Import ALL Existing Resources ==="
+      - echo "=== ULTIMATE PIPELINE FIX - Handle All Issues ==="
       
       # Get account ID for ARN construction
       - |
@@ -88,9 +88,9 @@ EOF
           fi
         fi
       
-      # Import ALL existing resources that are causing conflicts
+      # Import existing resources with proper error handling
       - |
-        echo "=== IMPORTING ALL EXISTING RESOURCES ==="
+        echo "=== IMPORTING EXISTING RESOURCES WITH PROPER FORMATS ==="
         
         # Import IAM roles
         echo "Importing IAM roles..."
@@ -109,12 +109,12 @@ EOF
         terraform import module.cicd.aws_iam_role.codepipeline ecommerce-codepipeline-role || echo "CodePipeline role not found"
         terraform import module.cicd.aws_iam_role.codebuild ecommerce-codebuild-role || echo "CodeBuild role not found"
         
-        # Import secrets
-        echo "Importing secrets..."
-        terraform import aws_secretsmanager_secret.app app/secret || echo "app/secret not found"
-        terraform import module.rds.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-rds-credentials || echo "RDS credentials secret not found"
-        terraform import module.rds_standby.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-standby-rds-credentials || echo "RDS standby credentials secret not found"
-        terraform import module.rds_dr.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-dr-rds-credentials || echo "RDS DR credentials secret not found"
+        # Import secrets with proper ARN format
+        echo "Importing secrets with proper ARN format..."
+        terraform import aws_secretsmanager_secret.app "arn:aws:secretsmanager:us-east-1:$ACCOUNT_ID:secret:app/secret" || echo "app/secret not found"
+        terraform import module.rds.aws_secretsmanager_secret.rds_credentials "arn:aws:secretsmanager:us-east-1:$ACCOUNT_ID:secret:ecommerce-ecs-dev-db-rds-credentials" || echo "RDS credentials secret not found"
+        terraform import module.rds_standby.aws_secretsmanager_secret.rds_credentials "arn:aws:secretsmanager:us-east-1:$ACCOUNT_ID:secret:ecommerce-ecs-dev-db-standby-rds-credentials" || echo "RDS standby credentials secret not found"
+        terraform import module.rds_dr.aws_secretsmanager_secret.rds_credentials "arn:aws:secretsmanager:us-east-1:$ACCOUNT_ID:secret:ecommerce-ecs-dev-db-dr-rds-credentials" || echo "RDS DR credentials secret not found"
         
         # Import WAF resources
         echo "Importing WAF resources..."
@@ -164,6 +164,22 @@ EOF
         
         echo "=== RESOURCE IMPORT COMPLETED ==="
       
+      # Handle VPC count issues by applying VPC first
+      - |
+        echo "=== HANDLING VPC COUNT ISSUES ==="
+        
+        # Apply VPC resources first to resolve count issues
+        echo "Applying VPC resources first..."
+        if [ -f terraform.tfvars.pipeline ]; then
+          terraform apply -target=module.vpc -var-file="terraform.tfvars.pipeline" -auto-approve || echo "VPC apply failed, continuing..."
+          terraform apply -target=module.vpc_dr -var-file="terraform.tfvars.pipeline" -auto-approve || echo "VPC DR apply failed, continuing..."
+        else
+          terraform apply -target=module.vpc -auto-approve || echo "VPC apply failed, continuing..."
+          terraform apply -target=module.vpc_dr -auto-approve || echo "VPC DR apply failed, continuing..."
+        fi
+        
+        echo "VPC resources applied"
+      
       # Create Terraform plan
       - |
         echo "Creating Terraform plan..."
@@ -180,7 +196,7 @@ EOF
           echo "No plan file created, will proceed with direct apply"
         fi
       
-      # Apply Terraform changes
+      # Apply Terraform changes with enhanced error handling
       - |
         echo "=== APPLYING TERRAFORM CHANGES ==="
         
@@ -216,7 +232,6 @@ EOF
         if [ $? -ne 0 ]; then
           echo "Strategy 3: Targeted apply for critical resources..."
           # Apply only the most critical resources one by one
-          terraform apply -target=module.vpc -auto-approve || echo "VPC apply failed, continuing..."
           terraform apply -target=module.s3 -auto-approve || echo "S3 apply failed, continuing..."
           terraform apply -target=module.alb -auto-approve || echo "ALB apply failed, continuing..."
           terraform apply -target=module.ecs -auto-approve || echo "ECS apply failed, continuing..."

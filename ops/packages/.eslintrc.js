@@ -2,7 +2,8 @@ module.exports = {
     env: {
         es2021: true,
         node: true,
-        jest: true
+        jest: true,
+        browser: true  // Add browser environment for frontend code
     },
     extends: ['eslint:recommended'],
     parserOptions: {

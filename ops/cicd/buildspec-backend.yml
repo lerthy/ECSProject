@@ -39,7 +39,7 @@ phases:
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO
       - echo Running code quality checks...
       - |
-        if [ -d "ops/packages/api" ]; then
+      - if [ -d "ops/packages/api" ]; then
           echo "Found ops/packages/api directory"
           cd ops/packages/api
           echo "Now in ops/packages/api, running tests..."
@@ -47,7 +47,7 @@ phases:
           echo "Running unit tests..."
           npm test -- --coverage --watchAll=false || echo "Tests skipped - no tests configured"
           echo "Preparing Docker context..."
-          cd ../../..
+          cd $CODEBUILD_SRC_DIR
         else
           echo "WARNING: ops/packages/api directory not found!"
           echo "Skipping tests and proceeding with Docker build..."
@@ -55,6 +55,7 @@ phases:
           find . -maxdepth 3 -type d
         fi
       - echo "Back to root directory:"
+      - cd $CODEBUILD_SRC_DIR
       - pwd
       - echo "Current directory structure:"
       - ls -la
@@ -63,23 +64,30 @@ phases:
     commands:
       - echo Building and pushing Docker image...
       - echo "Build started on $(date)"
-      - echo "Verifying Docker context and Dockerfile location:"
+      - echo "Current working directory:"
       - pwd
+      - echo "Navigating back to repository root..."
+      - cd $CODEBUILD_SRC_DIR
+      - pwd
+      - echo "Repository root directory structure:"
+      - ls -la
+      - echo "Verifying Docker context and Dockerfile location:"
       - echo "Looking for Dockerfile:"
       - find . -name "Dockerfile" -type f
       - echo "Checking ops/packages/Dockerfile:"
       - ls -la ops/packages/Dockerfile || echo "Dockerfile not found at ops/packages/Dockerfile"
       - echo "Contents of ops/packages directory:"
       - ls -la ops/packages/ || echo "ops/packages directory not found"
-      - echo "Contents of ops/packages/api directory:"
-      - ls -la ops/packages/api/ || echo "ops/packages/api directory not found"
-      - echo "Contents of ops/packages/web directory:"
-      - ls -la ops/packages/web/ || echo "ops/packages/web directory not found"
       - echo "Changing to ops/packages directory for Docker build context:"
       - cd ops/packages
       - pwd
       - echo "Current directory structure for Docker build context:"
       - ls -la
+      - echo "Verifying required files for Docker build:"
+      - ls -la package*.json || echo "package.json not found"
+      - ls -la Dockerfile || echo "Dockerfile not found" 
+      - ls -la api/ || echo "api directory not found"
+      - ls -la web/ || echo "web directory not found"
       - echo "Building Docker images with correct context..."
       - docker build -f Dockerfile -t $ECR_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION .
       - docker build -f Dockerfile -t $ECR_REPO:latest .
@@ -103,6 +111,9 @@ phases:
       - aws elbv2 describe-load-balancers --names $ALB_NAME --query 'LoadBalancers[0].DNSName' || echo "ALB not found"
       - echo Generating deployment manifest...
       - echo "Current working directory before manifest generation:"
+      - pwd
+      - echo "Navigating to repository root for artifact generation:"
+      - cd $CODEBUILD_SRC_DIR
       - pwd
       - printf '[{"name":"api","imageUri":"%s"}]' $ECR_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json
       - cat imagedefinitions.json

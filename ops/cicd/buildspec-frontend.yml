@@ -80,7 +80,10 @@ phases:
       - echo "Frontend deployment completed on $(date)"
       - echo Verifying deployment...
       - sleep 30
-      - curl -f https://$CLOUDFRONT_DOMAIN || echo "Frontend health check failed, but continuing..."
+      - echo "Getting CloudFront domain URL..."
+      - CLOUDFRONT_URL=$(aws cloudfront get-distribution --id $CLOUDFRONT_DIST_ID --query 'Distribution.DomainName' --output text)
+      - echo "CloudFront URL: $CLOUDFRONT_URL"
+      - curl -f https://$CLOUDFRONT_URL || echo "Frontend health check failed, but continuing..."
 
 artifacts:
   files:

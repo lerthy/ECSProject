@@ -141,17 +141,9 @@ router.get('/', (req, res) => {
 
 // GET /api/products/:id - Get product by ID
 router.get('/:id', (req, res) => {
-    let subsegment = null;
+    const subsegment = createSubsegment('get-product-by-id');
 
     try {
-        // Only use X-Ray if it's properly available
-        if (AWSXRay && AWSXRay.getSegment && typeof AWSXRay.getSegment === 'function') {
-            const segment = AWSXRay.getSegment();
-            if (segment && segment.addNewSubsegment) {
-                subsegment = segment.addNewSubsegment('get-product-by-id');
-            }
-        }
-
         const { id } = req.params;
         const product = products.find(p => p.id === id);
 
@@ -167,16 +159,15 @@ router.get('/:id', (req, res) => {
 
         res.json({ data: product });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to fetch product' });
     }
 });
 
 // POST /api/products - Create new product (admin endpoint)
 router.post('/', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('create-product');
+    const subsegment = createSubsegment('create-product');
 
     try {
         const { error, value } = productSchema.validate(req.body);
@@ -207,16 +198,15 @@ router.post('/', (req, res) => {
             data: newProduct
         });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to create product' });
     }
 });
 
 // PUT /api/products/:id - Update product
 router.put('/:id', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('update-product');
+    const subsegment = createSubsegment('update-product');
 
     try {
         const { id } = req.params;
@@ -254,16 +244,15 @@ router.put('/:id', (req, res) => {
             data: products[productIndex]
         });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to update product' });
     }
 });
 
 // DELETE /api/products/:id - Delete product
 router.delete('/:id', (req, res) => {
-    const segment = AWSXRay.getSegment();
-    const subsegment = segment.addNewSubsegment('delete-product');
+    const subsegment = createSubsegment('delete-product');
 
     try {
         const { id } = req.params;
@@ -283,8 +272,8 @@ router.delete('/:id', (req, res) => {
 
         res.json({ message: 'Product deleted successfully' });
     } catch (error) {
-        subsegment.addError(error);
-        subsegment.close();
+        useSubsegment(subsegment, 'addError')(error);
+        useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to delete product' });
     }
 });

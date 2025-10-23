@@ -63,10 +63,10 @@ class DatabaseConnection {
                 idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
                 connectionTimeoutMillis: 10000, // Connection timeout
 
-                // SSL configuration for RDS
-                ssl: process.env.NODE_ENV === 'production' ? {
+                // SSL configuration for RDS - Always enabled for AWS RDS
+                ssl: {
                     rejectUnauthorized: false // AWS RDS uses self-signed certificates
-                } : false,
+                },
 
                 // Additional PostgreSQL settings
                 statement_timeout: 30000, // 30 second query timeout

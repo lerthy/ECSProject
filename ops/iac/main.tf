@@ -20,48 +20,48 @@ provider "aws" {
 
 # DMS for cross-region DB replication (modularized)
 module "dms" {
-  source = "./modules/dms"
-  replication_instance_id      = "cross-region-dms-instance"
-  allocated_storage           = 50
-  replication_instance_class  = "dms.t3.medium"
-  engine_version              = "3.4.7"
-  publicly_accessible         = false
-  multi_az                    = true
-  auto_minor_version_upgrade  = true
-  tags                        = var.tags
+  source                     = "./modules/dms"
+  replication_instance_id    = "cross-region-dms-instance"
+  allocated_storage          = 50
+  replication_instance_class = "dms.t3.medium"
+  engine_version             = "3.4.7"
+  publicly_accessible        = false
+  multi_az                   = true
+  auto_minor_version_upgrade = true
+  tags                       = var.tags
 
-  source_endpoint_id     = "source-db-endpoint"
-  source_engine_name     = "postgres"
-  source_username        = var.rds_source_username
-  source_password        = var.rds_source_password
-  source_server_name     = var.rds_source_endpoint
-  source_port            = 5432
-  source_database_name   = var.rds_source_db_name
-  source_ssl_mode        = "require"
+  source_endpoint_id   = "source-db-endpoint"
+  source_engine_name   = "postgres"
+  source_username      = var.rds_source_username
+  source_password      = var.rds_source_password
+  source_server_name   = var.rds_source_endpoint
+  source_port          = 5432
+  source_database_name = var.rds_source_db_name
+  source_ssl_mode      = "require"
 
-  target_endpoint_id     = "target-db-endpoint"
-  target_engine_name     = "postgres"
-  target_username        = var.rds_target_username
-  target_password        = var.rds_target_password
-  target_server_name     = var.rds_target_endpoint
-  target_port            = 5432
-  target_database_name   = var.rds_target_db_name
-  target_ssl_mode        = "require"
+  target_endpoint_id   = "target-db-endpoint"
+  target_engine_name   = "postgres"
+  target_username      = var.rds_target_username
+  target_password      = var.rds_target_password
+  target_server_name   = var.rds_target_endpoint
+  target_port          = 5432
+  target_database_name = var.rds_target_db_name
+  target_ssl_mode      = "require"
 
-  replication_task_id        = "cross-region-task"
-  migration_type             = "full-load-and-cdc"
-  table_mappings             = file("${path.module}/dms-table-mappings.json")
-  replication_task_settings  = file("${path.module}/dms-task-settings.json")
+  replication_task_id       = "cross-region-task"
+  migration_type            = "full-load-and-cdc"
+  table_mappings            = file("${path.module}/dms-table-mappings.json")
+  replication_task_settings = file("${path.module}/dms-task-settings.json")
 }
 
 module "s3" {
-  source                      = "./modules/s3"
-  frontend_bucket_name        = var.frontend_bucket_name
-  alb_logs_bucket_name        = var.alb_logs_bucket_name
-  cloudfront_logs_bucket_name = var.cloudfront_logs_bucket_name
-  tags                        = var.tags
-  enable_replication          = var.enable_s3_replication
-  replication_role_arn        = "" # Not needed for source, created in module
+  source                         = "./modules/s3"
+  frontend_bucket_name           = var.frontend_bucket_name
+  alb_logs_bucket_name           = var.alb_logs_bucket_name
+  cloudfront_logs_bucket_name    = var.cloudfront_logs_bucket_name
+  tags                           = var.tags
+  enable_replication             = var.enable_s3_replication
+  replication_role_arn           = "" # Not needed for source, created in module
   replication_destination_bucket = var.replication_destination_bucket_arn
 }
 
@@ -136,26 +136,26 @@ module "rds" {
 
 # RDS in eu-north-1 (DR region)
 module "rds_dr" {
-  source = "./modules/rds"
-  providers = { aws = aws.dr }
-  name                  = "${var.ecs_name}-db-dr"
-  vpc_id                = module.vpc_dr.vpc_id
-  private_subnet_ids    = module.vpc_dr.db_subnet_ids
-  app_security_group_id = module.vpc_dr.ecs_security_group_id
-  database_name         = "ecommerce"
-  instance_class        = var.rds_instance_class
-  engine_version        = var.rds_engine_version
-  allocated_storage     = var.rds_allocated_storage
-  max_allocated_storage = var.rds_max_allocated_storage
-  multi_az                = false
-  backup_retention_period = 3
-  deletion_protection     = var.rds_deletion_protection
-  skip_final_snapshot     = var.environment == "dev" ? true : false
+  source                       = "./modules/rds"
+  providers                    = { aws = aws.dr }
+  name                         = "${var.ecs_name}-db-dr"
+  vpc_id                       = module.vpc_dr.vpc_id
+  private_subnet_ids           = module.vpc_dr.db_subnet_ids
+  app_security_group_id        = module.vpc_dr.ecs_security_group_id
+  database_name                = "ecommerce"
+  instance_class               = var.rds_instance_class
+  engine_version               = var.rds_engine_version
+  allocated_storage            = var.rds_allocated_storage
+  max_allocated_storage        = var.rds_max_allocated_storage
+  multi_az                     = false
+  backup_retention_period      = 3
+  deletion_protection          = var.rds_deletion_protection
+  skip_final_snapshot          = var.environment == "dev" ? true : false
   monitoring_interval          = 0
   performance_insights_enabled = false
   alarm_actions                = [module.sns_dr.sns_topic_arn]
-  create_read_replica         = false
-  read_replica_instance_class = var.rds_instance_class
+  create_read_replica          = false
+  read_replica_instance_class  = var.rds_instance_class
   # Cross-region replica config
   create_cross_region_replica = var.create_cross_region_replica
   replicate_source_db         = var.replicate_source_db
@@ -379,32 +379,32 @@ module "xray" {
 
 # X-Ray in eu-north-1 (DR region)
 module "xray_dr" {
-  source = "./modules/xray"
+  source    = "./modules/xray"
   providers = { aws = aws.dr }
-  name   = var.ecs_name
-  tags   = var.tags
+  name      = var.ecs_name
+  tags      = var.tags
 }
 
 module "athena" {
-  source          = "./modules/athena"
-  database_name   = var.athena_database_name
-  s3_bucket       = module.s3.alb_logs_bucket_name
+  source                 = "./modules/athena"
+  database_name          = var.athena_database_name
+  s3_bucket              = module.s3.alb_logs_bucket_name
   cloudfront_logs_bucket = module.s3.cloudfront_logs_bucket_name
-  workgroup_name  = var.athena_workgroup_name
-  output_location = var.athena_output_location
-  tags            = var.tags
+  workgroup_name         = var.athena_workgroup_name
+  output_location        = var.athena_output_location
+  tags                   = var.tags
 }
 
 # Athena in eu-north-1 (DR region)
 module "athena_dr" {
-  source          = "./modules/athena"
-  providers       = { aws = aws.dr }
-  database_name   = var.athena_database_name
-  s3_bucket       = module.s3_dr.alb_logs_bucket_name
+  source                 = "./modules/athena"
+  providers              = { aws = aws.dr }
+  database_name          = var.athena_database_name
+  s3_bucket              = module.s3_dr.alb_logs_bucket_name
   cloudfront_logs_bucket = module.s3_dr.cloudfront_logs_bucket_name
-  workgroup_name  = var.athena_workgroup_name
-  output_location = var.athena_output_location
-  tags            = var.tags
+  workgroup_name         = var.athena_workgroup_name
+  output_location        = var.athena_output_location
+  tags                   = var.tags
 }
 
 module "monitoring_alarms" {

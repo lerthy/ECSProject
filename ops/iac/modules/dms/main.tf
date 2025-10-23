@@ -1,12 +1,12 @@
 resource "aws_dms_replication_instance" "this" {
-  replication_instance_id      = var.replication_instance_id
-  allocated_storage           = var.allocated_storage
-  replication_instance_class  = var.replication_instance_class
-  engine_version              = var.engine_version
-  publicly_accessible         = var.publicly_accessible
-  multi_az                    = var.multi_az
-  auto_minor_version_upgrade  = var.auto_minor_version_upgrade
-  tags                        = var.tags
+  replication_instance_id    = var.replication_instance_id
+  allocated_storage          = var.allocated_storage
+  replication_instance_class = var.replication_instance_class
+  engine_version             = var.engine_version
+  publicly_accessible        = var.publicly_accessible
+  multi_az                   = var.multi_az
+  auto_minor_version_upgrade = var.auto_minor_version_upgrade
+  tags                       = var.tags
 }
 
 resource "aws_dms_endpoint" "source" {
@@ -34,14 +34,14 @@ resource "aws_dms_endpoint" "target" {
 }
 
 resource "aws_dms_replication_task" "this" {
-  replication_task_id          = var.replication_task_id
-  migration_type               = var.migration_type
-  replication_instance_arn     = aws_dms_replication_instance.this.replication_instance_arn
-  source_endpoint_arn          = aws_dms_endpoint.source.endpoint_arn
-  target_endpoint_arn          = aws_dms_endpoint.target.endpoint_arn
-  table_mappings               = file("${path.module}/table-mappings.json")
-  replication_task_settings    = file("${path.module}/task-settings.json")
-  tags                        = var.tags
+  replication_task_id       = var.replication_task_id
+  migration_type            = var.migration_type
+  replication_instance_arn  = aws_dms_replication_instance.this.replication_instance_arn
+  source_endpoint_arn       = aws_dms_endpoint.source.endpoint_arn
+  target_endpoint_arn       = aws_dms_endpoint.target.endpoint_arn
+  table_mappings            = file("${path.module}/table-mappings.json")
+  replication_task_settings = file("${path.module}/task-settings.json")
+  tags                      = var.tags
 }
 
 # CloudWatch Alarms for DMS monitoring
@@ -93,7 +93,7 @@ resource "aws_cloudwatch_metric_alarm" "dms_cdc_latency" {
   namespace           = "AWS/DMS"
   period              = "300"
   statistic           = "Average"
-  threshold           = "300"  # 5 minutes
+  threshold           = "300" # 5 minutes
   alarm_description   = "DMS CDC latency is too high"
   alarm_actions       = var.alarm_actions
   ok_actions          = var.alarm_actions

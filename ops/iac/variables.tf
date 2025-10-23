@@ -104,7 +104,7 @@ variable "sns_alert_email" {
   description = "Email address for SNS alerts"
   type        = string
   default     = "dev-alerts@example.com"
-  
+
   # Added variable validation per best practices
   validation {
     condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.sns_alert_email))
@@ -122,7 +122,7 @@ variable "environment" {
   description = "Environment name (e.g., dev, prod, staging)"
   type        = string
   default     = "dev"
-  
+
   # Added variable validation per best practices
   validation {
     condition     = contains(["dev", "staging", "prod"], var.environment)
@@ -161,7 +161,7 @@ variable "vpc_name" {
 variable "vpc_cidr_block" {
   description = "VPC CIDR block"
   type        = string
-  
+
   # Added variable validation per best practices
   validation {
     condition     = can(cidrhost(var.vpc_cidr_block, 0))

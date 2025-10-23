@@ -32,7 +32,7 @@ resource "aws_route53_record" "api_geographic_primary" {
     evaluate_target_health = true
   }
   geolocation_routing_policy {
-    continent = "NA"  # North America
+    continent = "NA" # North America
   }
   health_check_id = aws_route53_health_check.alb_primary.id
 }
@@ -48,7 +48,7 @@ resource "aws_route53_record" "api_geographic_secondary" {
     evaluate_target_health = true
   }
   geolocation_routing_policy {
-    continent = "EU"  # Europe
+    continent = "EU" # Europe
   }
   health_check_id = aws_route53_health_check.alb_standby.id
 }
@@ -65,7 +65,7 @@ resource "aws_route53_record" "api_weighted_primary" {
     evaluate_target_health = true
   }
   weighted_routing_policy {
-    weight = 80  # 80% traffic to primary
+    weight = 80 # 80% traffic to primary
   }
   health_check_id = aws_route53_health_check.alb_primary.id
 }
@@ -81,7 +81,7 @@ resource "aws_route53_record" "api_weighted_standby" {
     evaluate_target_health = true
   }
   weighted_routing_policy {
-    weight = 20  # 20% traffic to standby
+    weight = 20 # 20% traffic to standby
   }
   health_check_id = aws_route53_health_check.alb_standby.id
 }

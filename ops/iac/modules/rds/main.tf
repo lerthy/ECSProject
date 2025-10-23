@@ -2,9 +2,9 @@
 resource "aws_db_instance" "cross_region_replica" {
   count = var.create_cross_region_replica ? 1 : 0
 
-  identifier = "${var.name}-cross-region-replica"
-  replicate_source_db = var.replicate_source_db
-  instance_class      = var.read_replica_instance_class
+  identifier             = "${var.name}-cross-region-replica"
+  replicate_source_db    = var.replicate_source_db
+  instance_class         = var.read_replica_instance_class
   vpc_security_group_ids = [aws_security_group.rds.id]
   publicly_accessible    = false
 

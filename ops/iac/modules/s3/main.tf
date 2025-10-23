@@ -1,13 +1,13 @@
 # S3 Replication IAM Role (only in source region)
 resource "aws_iam_role" "replication" {
   count = var.enable_replication ? 1 : 0
-  name = "s3-replication-role"
+  name  = "s3-replication-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = { Service = "s3.amazonaws.com" }
-      Action = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
   tags = var.tags
@@ -15,8 +15,8 @@ resource "aws_iam_role" "replication" {
 
 resource "aws_iam_role_policy" "replication_policy" {
   count = var.enable_replication ? 1 : 0
-  name   = "s3-replication-policy"
-  role   = aws_iam_role.replication[0].id
+  name  = "s3-replication-policy"
+  role  = aws_iam_role.replication[0].id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -50,7 +50,7 @@ resource "aws_iam_role_policy" "replication_policy" {
 }
 
 resource "aws_s3_bucket_replication_configuration" "frontend" {
-  count = var.enable_replication ? 1 : 0
+  count  = var.enable_replication ? 1 : 0
   bucket = aws_s3_bucket.frontend.id
   role   = aws_iam_role.replication[0].arn
 

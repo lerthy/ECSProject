@@ -6,8 +6,8 @@ resource "aws_athena_database" "logs" {
 
 # CloudFront logs table
 resource "aws_athena_table" "cloudfront_logs" {
-  name     = "cloudfront_logs"
-  database = aws_athena_database.logs.name
+  name       = "cloudfront_logs"
+  database   = aws_athena_database.logs.name
   table_type = "EXTERNAL_TABLE"
 
   storage_descriptor {
@@ -19,7 +19,7 @@ resource "aws_athena_table" "cloudfront_logs" {
       name                  = "cloudfront-logs-serde"
       serialization_library = "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"
       parameters = {
-        "field.delim" = "\t"
+        "field.delim"          = "\t"
         "serialization.format" = "\t"
       }
     }
@@ -156,20 +156,20 @@ resource "aws_athena_table" "cloudfront_logs" {
   }
 
   parameters = {
-    "projection.enabled" = "true"
-    "projection.date.type" = "date"
-    "projection.date.range" = "2023/01/01,NOW"
-    "projection.date.format" = "yyyy/MM/dd"
-    "projection.date.interval" = "1"
+    "projection.enabled"            = "true"
+    "projection.date.type"          = "date"
+    "projection.date.range"         = "2023/01/01,NOW"
+    "projection.date.format"        = "yyyy/MM/dd"
+    "projection.date.interval"      = "1"
     "projection.date.interval.unit" = "DAYS"
-    "storage.location.template" = "s3://${var.cloudfront_logs_bucket}/$${date}/"
+    "storage.location.template"     = "s3://${var.cloudfront_logs_bucket}/$${date}/"
   }
 }
 
 # ALB logs table
 resource "aws_athena_table" "alb_logs" {
-  name     = "alb_logs"
-  database = aws_athena_database.logs.name
+  name       = "alb_logs"
+  database   = aws_athena_database.logs.name
   table_type = "EXTERNAL_TABLE"
 
   storage_descriptor {
@@ -181,7 +181,7 @@ resource "aws_athena_table" "alb_logs" {
       name                  = "alb-logs-serde"
       serialization_library = "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"
       parameters = {
-        "field.delim" = " "
+        "field.delim"          = " "
         "serialization.format" = " "
       }
     }
@@ -334,16 +334,16 @@ resource "aws_athena_table" "alb_logs" {
   }
 
   parameters = {
-    "projection.enabled" = "true"
-    "projection.year.type" = "integer"
-    "projection.year.range" = "2023,2030"
-    "projection.year.interval" = "1"
-    "projection.month.type" = "integer"
-    "projection.month.range" = "1,12"
+    "projection.enabled"        = "true"
+    "projection.year.type"      = "integer"
+    "projection.year.range"     = "2023,2030"
+    "projection.year.interval"  = "1"
+    "projection.month.type"     = "integer"
+    "projection.month.range"    = "1,12"
     "projection.month.interval" = "1"
-    "projection.day.type" = "integer"
-    "projection.day.range" = "1,31"
-    "projection.day.interval" = "1"
+    "projection.day.type"       = "integer"
+    "projection.day.range"      = "1,31"
+    "projection.day.interval"   = "1"
     "storage.location.template" = "s3://${var.s3_bucket}/$${year}/$${month}/$${day}/"
   }
 }

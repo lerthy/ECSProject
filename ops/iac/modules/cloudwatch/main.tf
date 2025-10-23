@@ -40,9 +40,9 @@ resource "aws_cloudwatch_metric_alarm" "alb_latency" {
   dimensions = {
     LoadBalancer = var.alb_name
   }
-  alarm_description   = "ALB latency too high"
-  alarm_actions       = [var.sns_topic_arn]
-  tags                = var.tags
+  alarm_description = "ALB latency too high"
+  alarm_actions     = [var.sns_topic_arn]
+  tags              = var.tags
 }
 
 resource "aws_cloudwatch_metric_alarm" "cloudfront_cache_ratio" {
@@ -57,9 +57,9 @@ resource "aws_cloudwatch_metric_alarm" "cloudfront_cache_ratio" {
   dimensions = {
     DistributionId = var.cloudfront_distribution_id
   }
-  alarm_description   = "CloudFront cache hit ratio too low"
-  alarm_actions       = [var.sns_topic_arn]
-  tags                = var.tags
+  alarm_description = "CloudFront cache hit ratio too low"
+  alarm_actions     = [var.sns_topic_arn]
+  tags              = var.tags
 }
 
 # Custom application metrics alarms
@@ -71,7 +71,7 @@ resource "aws_cloudwatch_metric_alarm" "api_high_response_time" {
   namespace           = "ECommerce/API"
   period              = 300
   statistic           = "Average"
-  threshold           = 2000  # 2 seconds
+  threshold           = 2000 # 2 seconds
   alarm_description   = "API response time is too high"
   alarm_actions       = [var.sns_topic_arn]
   ok_actions          = [var.sns_topic_arn]

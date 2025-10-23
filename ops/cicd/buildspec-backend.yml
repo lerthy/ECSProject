@@ -38,20 +38,21 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO
       - echo Running code quality checks...
-      - if [ -d "ops/packages/api" ]; then
-          echo "Found ops/packages/api directory";
-          cd ops/packages/api;
-          echo "Now in ops/packages/api, running tests...";
-          npm run lint || echo "Lint check skipped - no linter configured";
-          echo "Running unit tests...";
-          npm test -- --coverage --watchAll=false || echo "Tests skipped - no tests configured";
-          echo "Preparing Docker context...";
-          cd $CODEBUILD_SRC_DIR;
+      - |
+        if [ -d "ops/packages/api" ]; then
+          echo "Found ops/packages/api directory"
+          cd ops/packages/api
+          echo "Now in ops/packages/api, running tests..."
+          npm run lint || echo "Lint check skipped - no linter configured"
+          echo "Running unit tests..."
+          npm test -- --coverage --watchAll=false || echo "Tests skipped - no tests configured"
+          echo "Preparing Docker context..."
+          cd $CODEBUILD_SRC_DIR
         else
-          echo "WARNING: ops/packages/api directory not found!";
-          echo "Skipping tests and proceeding with Docker build...";
-          echo "Full directory structure:";
-          find . -maxdepth 3 -type d;
+          echo "WARNING: ops/packages/api directory not found!"
+          echo "Skipping tests and proceeding with Docker build..."
+          echo "Full directory structure:"
+          find . -maxdepth 3 -type d
         fi
       - echo "Back to root directory:"
       - cd $CODEBUILD_SRC_DIR

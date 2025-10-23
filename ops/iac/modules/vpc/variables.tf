@@ -33,3 +33,15 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "use_existing_vpc" {
+  description = "Whether to use existing VPC instead of creating a new one (prevents VPC limit errors)"
+  type        = bool
+  default     = true
+}
+
+variable "existing_vpc_id" {
+  description = "Existing VPC ID to use when use_existing_vpc is true"
+  type        = string
+  default     = ""
+}

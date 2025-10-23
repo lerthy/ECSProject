@@ -25,3 +25,9 @@ variable "create_topic" {
   type        = bool
   default     = true
 }
+
+variable "aws_region" {
+  description = "AWS region for unique statement IDs"
+  type        = string
+  default     = "us-east-1"
+}

@@ -32,8 +32,9 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 }
 
 resource "aws_lambda_permission" "allow_sns" {
-  count         = var.slack_webhook != "" ? 1 : 0
-  statement_id  = "AllowExecutionFromSNS"
+  count = var.slack_webhook != "" ? 1 : 0
+  # Use unique statement_id with region and topic name to prevent "statement id already exists" errors
+  statement_id  = "AllowExecutionFromSNS-${var.name}-${var.aws_region}"
   action        = "lambda:InvokeFunction"
   function_name = data.aws_lambda_function.slack_notifier[0].function_name
   principal     = "sns.amazonaws.com"

@@ -7,8 +7,26 @@ terraform {
   }
 }
 
+# Data source for existing VPC (used when use_existing_vpc = true)
+# This prevents "VpcLimitExceeded" errors
+data "aws_vpc" "existing" {
+  count = var.use_existing_vpc ? 1 : 0
+  id    = var.existing_vpc_id != "" ? var.existing_vpc_id : null
+  
+  # If no VPC ID provided, find by name tag
+  dynamic "filter" {
+    for_each = var.existing_vpc_id == "" ? [1] : []
+    content {
+      name   = "tag:Name"
+      values = ["${var.name}-vpc"]
+    }
+  }
+}
+
 # VPC with lifecycle to prevent destruction
+# Only create if use_existing_vpc is false
 resource "aws_vpc" "this" {
+  count                = var.use_existing_vpc ? 0 : 1
   cidr_block           = var.cidr_block
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -23,8 +41,13 @@ resource "aws_vpc" "this" {
   }
 }
 
+# Local variable to reference the VPC ID (either existing or newly created)
+locals {
+  vpc_id = var.use_existing_vpc ? data.aws_vpc.existing[0].id : aws_vpc.this[0].id
+}
+
 resource "aws_internet_gateway" "this" {
-  vpc_id = aws_vpc.this.id
+  vpc_id = local.vpc_id
   tags   = merge(var.tags, { Name = "${var.name}-igw" })
 }
 
@@ -40,7 +63,7 @@ resource "aws_eip" "nat" {
 
 resource "aws_subnet" "public" {
   count                   = length(var.public_subnets)
-  vpc_id                  = aws_vpc.this.id
+  vpc_id                  = local.vpc_id
   cidr_block              = var.public_subnets[count.index]
   map_public_ip_on_launch = true
   availability_zone       = element(var.azs, count.index)
@@ -49,7 +72,7 @@ resource "aws_subnet" "public" {
 
 resource "aws_subnet" "private" {
   count             = length(var.private_subnets)
-  vpc_id            = aws_vpc.this.id
+  vpc_id            = local.vpc_id
   cidr_block        = var.private_subnets[count.index]
   availability_zone = element(var.azs, count.index)
   tags              = merge(var.tags, { Name = "${var.name}-private-${count.index}" })
@@ -57,7 +80,7 @@ resource "aws_subnet" "private" {
 
 resource "aws_subnet" "db_subnet" {
   count             = length(var.db_subnets)
-  vpc_id            = aws_vpc.this.id
+  vpc_id            = local.vpc_id
   cidr_block        = var.db_subnets[count.index]
   availability_zone = element(var.azs, count.index)
   tags = merge(var.tags, {
@@ -68,7 +91,7 @@ resource "aws_subnet" "db_subnet" {
 
 # Route Tables
 resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.this.id
+  vpc_id = local.vpc_id
 
   route {
     cidr_block = "0.0.0.0/0"
@@ -79,7 +102,7 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.this.id
+  vpc_id = local.vpc_id
 
   route {
     cidr_block     = "0.0.0.0/0"
@@ -90,7 +113,7 @@ resource "aws_route_table" "private" {
 }
 
 resource "aws_route_table" "database" {
-  vpc_id = aws_vpc.this.id
+  vpc_id = local.vpc_id
   tags   = merge(var.tags, { Name = "${var.name}-database-rt" })
 }
 
@@ -116,7 +139,7 @@ resource "aws_route_table_association" "database" {
 # Security Groups
 resource "aws_security_group" "alb" {
   name_prefix = "${var.name}-alb-"
-  vpc_id      = aws_vpc.this.id
+  vpc_id      = local.vpc_id
   description = "Security group for ALB"
 
   ingress {
@@ -165,7 +188,7 @@ resource "aws_security_group" "alb" {
 
 resource "aws_security_group" "ecs" {
   name_prefix = "${var.name}-ecs-"
-  vpc_id      = aws_vpc.this.id
+  vpc_id      = local.vpc_id
   description = "Security group for ECS tasks"
 
   ingress {
@@ -186,7 +209,7 @@ resource "aws_security_group" "ecs" {
 }
 
 output "vpc_id" {
-  value = aws_vpc.this.id
+  value = local.vpc_id
 }
 output "public_subnet_ids" {
   value = aws_subnet.public[*].id

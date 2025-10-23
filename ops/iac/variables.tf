@@ -144,11 +144,12 @@ variable "ecs_cpu_threshold" {
   default     = 80
 }
 # App secret for Secrets Manager
+# Provide a valid JSON default to prevent empty secret errors
 variable "app_secret_string" {
-  description = "Secret string for application (example)"
+  description = "Secret string for application (must be valid JSON or string)"
   type        = string
   sensitive   = true
-  default     = ""
+  default     = "{\"db_password\":\"changeme\",\"api_key\":\"changeme\"}"
 }
 variable "region" {
   description = "AWS region"

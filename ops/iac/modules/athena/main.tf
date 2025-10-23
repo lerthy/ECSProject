@@ -355,7 +355,11 @@ resource "aws_glue_catalog_table" "alb_logs" {
   }
 }
 
+# Note: AWS provider doesn't have aws_athena_workgroup data source
+# We use lifecycle.ignore_changes instead to handle existing workgroups
+
 # Athena workgroup with lifecycle to prevent destruction
+# With ignore_changes, it won't fail if workgroup already exists
 resource "aws_athena_workgroup" "logs" {
   name = var.workgroup_name
   configuration {

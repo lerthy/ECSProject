@@ -8,6 +8,7 @@ terraform {
 }
 
 # XRay group with lifecycle to prevent destruction
+# With ignore_changes, it won't fail if group already exists
 resource "aws_xray_group" "default" {
   filter_expression = "service(\"${var.name}\")"
   group_name        = var.name
@@ -20,7 +21,8 @@ resource "aws_xray_group" "default" {
     prevent_destroy = true
     ignore_changes = [
       group_name,
-      tags
+      tags,
+      filter_expression
     ]
   }
 }

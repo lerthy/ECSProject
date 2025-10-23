@@ -34,3 +34,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "create_buckets" {
+  description = "Whether to create S3 buckets or use existing ones (prevents BucketAlreadyExists errors)"
+  type        = bool
+  default     = false
+}

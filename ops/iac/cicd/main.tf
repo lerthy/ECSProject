@@ -55,7 +55,7 @@ resource "random_string" "suffix" {
   upper   = false
 }
 
-# CodeBuild projects
+# CodeBuild projects with lifecycle ignore_changes to prevent "already exists" errors
 resource "aws_codebuild_project" "terraform" {
   name         = "ecommerce-terraform"
   description  = "Terraform infrastructure build project"
@@ -93,6 +93,10 @@ resource "aws_codebuild_project" "terraform" {
   }
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [name, description, environment, source]
+  }
 }
 
 # Added security scanning project per best practices
@@ -118,6 +122,10 @@ resource "aws_codebuild_project" "security_scan" {
   }
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [name, description, environment, source]
+  }
 }
 
 resource "aws_codebuild_project" "frontend" {

@@ -63,6 +63,7 @@ module "s3" {
   enable_replication             = var.enable_s3_replication
   replication_role_arn           = "" # Not needed for source, created in module
   replication_destination_bucket = var.replication_destination_bucket_arn
+  create_buckets                 = false # Use existing buckets to prevent BucketAlreadyExists errors
 }
 
 # S3 in eu-north-1 (DR region)
@@ -73,30 +74,35 @@ module "s3_dr" {
   alb_logs_bucket_name        = var.alb_logs_bucket_name_dr
   cloudfront_logs_bucket_name = var.cloudfront_logs_bucket_name_dr
   tags                        = var.tags
+  create_buckets              = false # Use existing buckets to prevent BucketAlreadyExists errors
 }
 
 module "vpc" {
-  source          = "./modules/vpc"
-  name            = var.vpc_name
-  cidr_block      = var.vpc_cidr_block
-  public_subnets  = var.public_subnets
-  private_subnets = var.private_subnets
-  db_subnets      = var.db_subnets
-  azs             = var.azs
-  tags            = var.tags
+  source           = "./modules/vpc"
+  name             = var.vpc_name
+  cidr_block       = var.vpc_cidr_block
+  public_subnets   = var.public_subnets
+  private_subnets  = var.private_subnets
+  db_subnets       = var.db_subnets
+  azs              = var.azs
+  tags             = var.tags
+  use_existing_vpc = var.use_existing_vpc      # Use existing VPC to prevent VpcLimitExceeded errors
+  existing_vpc_id  = ""                         # Will auto-detect by name tag
 }
 
 # VPC in eu-north-1 (DR region)
 module "vpc_dr" {
-  source          = "./modules/vpc"
-  providers       = { aws = aws.dr }
-  name            = var.vpc_name_dr
-  cidr_block      = var.vpc_cidr_block_dr
-  public_subnets  = var.public_subnets_dr
-  private_subnets = var.private_subnets_dr
-  db_subnets      = var.db_subnets_dr
-  azs             = var.azs_dr
-  tags            = var.tags
+  source           = "./modules/vpc"
+  providers        = { aws = aws.dr }
+  name             = var.vpc_name_dr
+  cidr_block       = var.vpc_cidr_block_dr
+  public_subnets   = var.public_subnets_dr
+  private_subnets  = var.private_subnets_dr
+  db_subnets       = var.db_subnets_dr
+  azs              = var.azs_dr
+  tags             = var.tags
+  use_existing_vpc = var.use_existing_vpc      # Use existing VPC to prevent VpcLimitExceeded errors
+  existing_vpc_id  = ""                         # Will auto-detect by name tag
 }
 
 module "rds" {
@@ -360,6 +366,7 @@ module "sns" {
   tags            = var.tags
   sns_alert_email = var.sns_alert_email
   slack_webhook   = var.sns_slack_webhook
+  aws_region      = var.region # For unique Lambda permission statement IDs
 }
 
 # SNS in eu-north-1 (DR region)
@@ -370,6 +377,7 @@ module "sns_dr" {
   tags            = var.tags
   sns_alert_email = var.sns_alert_email
   slack_webhook   = var.sns_slack_webhook
+  aws_region      = "eu-north-1" # For unique Lambda permission statement IDs
 }
 
 module "xray" {
@@ -444,10 +452,10 @@ module "cicd" {
   ecs_service_name           = module.ecs.service_name
   frontend_bucket_name       = module.s3.frontend_bucket_name
   cloudfront_distribution_id = module.cloudfront.distribution_id
-  alb_name                   = var.alb_name
-  app_health_url             = "https://${module.alb.alb_dns_name}"
-  sns_topic_arn              = module.sns.sns_topic_arn
-  tags                       = var.tags
+  alb_name       = var.alb_name
+  app_health_url = "https://${module.alb.alb_dns_name}"
+  sns_topic_arn  = module.sns.sns_topic_arn
+  tags           = var.tags
 }
 
 module "ecr" {

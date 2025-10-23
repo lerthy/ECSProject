@@ -23,15 +23,33 @@ phases:
   pre_build:
     commands:
       - echo Starting backend API build...
+      - echo "Working directory at start:"
+      - pwd
+      - echo "Directory structure:"
+      - ls -la
+      - echo "Checking if ops directory exists:"
+      - ls -la ops/ || echo "ops directory not found"
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO
       - echo Running code quality checks...
-      - cd ops/packages/api
-      - npm run lint || echo "Lint check skipped - no linter configured"
-      - echo Running unit tests...
-      - npm test -- --coverage --watchAll=false || echo "Tests skipped - no tests configured"
-      - echo Preparing Docker context...
-      - cd ../../..
+      - |
+        if [ -d "ops/packages/api" ]; then
+          echo "Found ops/packages/api directory"
+          cd ops/packages/api
+          echo "Now in ops/packages/api, running tests..."
+          npm run lint || echo "Lint check skipped - no linter configured"
+          echo "Running unit tests..."
+          npm test -- --coverage --watchAll=false || echo "Tests skipped - no tests configured"
+          echo "Preparing Docker context..."
+          cd ../../..
+        else
+          echo "ERROR: ops/packages/api directory not found!"
+          echo "Available directories:"
+          find . -name "api" -type d 2>/dev/null || echo "No api directory found"
+          exit 1
+        fi
+      - echo "Back to root directory:"
+      - pwd
       - echo "Current directory structure:"
       - ls -la
 

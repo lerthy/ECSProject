@@ -51,10 +51,17 @@ phases:
       - echo Creating and applying Terraform plan...
       - echo "Current working directory:"
       - pwd
-      - echo "Directory structure:"
+      - echo "Directory structure from terraform context:"
       - ls -la ../config/dev/
-      - echo "Checking terraform.tfvars file:"
+      - echo "Creating terraform.tfvars from template..."
+      - cp ../config/dev/terraform.tfvars.template ../config/dev/terraform.tfvars
+      - echo "Setting secrets from environment variables..."
+      - echo 'github_token = "'$GITHUB_TOKEN'"' >> ../config/dev/terraform.tfvars
+      - echo 'sns_slack_webhook = "'$SNS_SLACK_WEBHOOK'"' >> ../config/dev/terraform.tfvars  
+      - echo 'app_secret_string = "'$APP_SECRET_STRING'"' >> ../config/dev/terraform.tfvars
+      - echo "Checking final terraform.tfvars:"
       - ls -la ../config/dev/terraform.tfvars
+      - echo "Running terraform plan..."
       - terraform plan -detailed-exitcode -out=tfplan -var-file="../config/dev/terraform.tfvars"
       - terraform show -json tfplan > tfplan.json
       - echo Applying Terraform changes...

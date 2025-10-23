@@ -10,7 +10,26 @@ phases:
       nodejs: 20
     commands:
       - echo Installing frontend dependencies...
-      - cd ops/packages
+      - echo "Working directory at start:"
+      - pwd
+      - echo "Directory structure:"
+      - ls -la
+      - echo "Checking if ops directory exists:"
+      - ls -la ops/ || echo "ops directory not found"
+      - |
+        if [ -d "ops/packages" ]; then
+          echo "Found ops/packages directory"
+          cd ops/packages
+        else
+          echo "ERROR: ops/packages directory not found!"
+          echo "Available directories:"
+          find . -name "packages" -type d 2>/dev/null || echo "No packages directory found"
+          exit 1
+        fi
+      - echo "Now in ops/packages:"
+      - pwd
+      - echo "Contents of ops/packages:"
+      - ls -la
       - npm ci --include=dev
       - echo "Checking installed packages:"
       - npm list --depth=0

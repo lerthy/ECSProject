@@ -130,7 +130,6 @@ The project implements a **multi-layered monitoring architecture** across:
 - **Topic**: `arn:aws:sns:us-east-1:967746377724:alerts`
 - **Email**: bardh315@gmail.com (confirmed subscription)
 - **Slack**: Configurable via webhook environment variable
-- **Alert Types**: ALARM, OK, INSUFFICIENT_DATA states
 
 ### 4.7 CloudWatch Dashboards
 
@@ -175,16 +174,6 @@ The project implements a **multi-layered monitoring architecture** across:
 
 ---
 
-## 6. Evidence Checklist
-
-- [x] Architecture diagram
-- [x] CloudWatch Dashboard screenshot
-- [x] SNS alarm evidence
-- [x] Terraform backend verification
-- [x] Athena query results
-
----
-
 ## Implementation Notes
 
 - All Terraform code is formatted with `terraform fmt`
@@ -195,5 +184,3 @@ The project implements a **multi-layered monitoring architecture** across:
 - Run `terraform validate` and `terraform fmt` in each environment (dev, staging, prod) for best practices
 
 ---
-
-> Screenshots and evidence files should be attached or linked as required for final review.

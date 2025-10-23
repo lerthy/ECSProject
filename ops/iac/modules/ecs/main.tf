@@ -66,6 +66,33 @@ resource "aws_iam_role_policy_attachment" "ecs_secrets_manager_access" {
   policy_arn = aws_iam_policy.ecs_secrets_manager_policy.arn
 }
 
+# IAM policy for X-Ray tracing
+resource "aws_iam_policy" "ecs_xray_policy" {
+  name        = "${var.name}-ecs-xray-policy"
+  description = "IAM policy for ECS task to write X-Ray traces"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "xray:PutTraceSegments",
+          "xray:PutTelemetryRecords"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_xray_access" {
+  role       = aws_iam_role.ecs_task_execution.name
+  policy_arn = aws_iam_policy.ecs_xray_policy.arn
+}
+
 resource "aws_ecs_task_definition" "api" {
   family                   = "${var.name}-api"
   network_mode             = "awsvpc"

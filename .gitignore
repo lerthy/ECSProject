@@ -5,13 +5,10 @@ dist/
 build/
 .env
 .env.*
-.DS_Store
-# Ignore Terraform state files
-*.tfstate
-*.tfstate.*
-.terraform/
-backend.tf
+.env.local
 *.tfvars
+!*.tfvars.template
+!*.tfvars.example
 # Ignore logs
 *.log
 # Ignore local scripts output

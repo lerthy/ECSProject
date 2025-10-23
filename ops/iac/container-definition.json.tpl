@@ -2,7 +2,7 @@
     {
         "name": "${container_name}",
         "image": "${image_uri}",
-        "cpu": ${cpu},
+        "cpu": 224,
         "memory": ${memory},
         "portMappings": [
             { 
@@ -20,7 +20,10 @@
             { "name": "DB_NAME", "value": "${db_name}" },
             { "name": "DB_USER", "value": "${db_username}" },
             { "name": "AWS_REGION", "value": "${aws_region}" },
-            { "name": "DB_SECRETS_ARN", "value": "${secrets_manager_secret_arn}" }
+            { "name": "DB_SECRETS_ARN", "value": "${secrets_manager_secret_arn}" },
+            { "name": "_X_AMZN_TRACE_ID", "value": "" },
+            { "name": "AWS_XRAY_TRACING_NAME", "value": "${container_name}" },
+            { "name": "AWS_XRAY_DAEMON_ADDRESS", "value": "127.0.0.1:2000" }
         ],
         "logConfiguration": {
             "logDriver": "awslogs",
@@ -38,5 +41,30 @@
             "retries": 3,
             "startPeriod": 60
         }
+    },
+    {
+        "name": "xray-daemon",
+        "image": "amazon/aws-xray-daemon:latest",
+        "cpu": 32,
+        "memory": 256,
+        "portMappings": [
+            {
+                "containerPort": 2000,
+                "hostPort": 2000,
+                "protocol": "udp"
+            }
+        ],
+        "environment": [
+            { "name": "AWS_REGION", "value": "${aws_region}" }
+        ],
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "${log_group}",
+                "awslogs-region": "${aws_region}",
+                "awslogs-stream-prefix": "xray"
+            }
+        },
+        "essential": false
     }
 ]

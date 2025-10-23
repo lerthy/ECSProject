@@ -42,6 +42,9 @@ container_port = 3000                # Container port (matches Dockerfile EXPOSE
 cpu            = "256"               # Fargate CPU units (dev: 256)
 memory         = "512"               # Fargate memory (dev: 512MB)
 desired_count  = 1                   # Number of ECS tasks
+# ECS container definition JSON
+# ECS container definition - Now managed by template
+# See container-definition.json.tpl for the actual definition
 
 # =====================
 # Load Balancer (ALB)
@@ -61,19 +64,13 @@ price_class = "PriceClass_100" # Lowest cost
 # CloudWatch
 # =====================
 log_retention_days = 7 # Log retention (days)
+# CloudWatch dashboard JSON
 dashboard_body    = <<DASHBOARD
 {
     "widgets": []
 }
 DASHBOARD
 ecs_cpu_threshold = 80 # CPU alarm threshold (%)
-
-# =====================
-# SNS Alerts
-# =====================
-sns_alert_email = "bardh315@gmail.com"
-# sns_slack_webhook will be set from environment variable
-
 # =====================
 # Route53 Failover (Warm Standby)
 # =====================
@@ -93,9 +90,6 @@ athena_output_location = "s3://ardhi-ecommerce-athena-results-dev/" # Athena out
 # =====================
 waf_enabled  = true # Enable WAF for dev
 warm_standby = true # Enable warm standby
-
-# app_secret_string will be set from environment variable
-
 # =====================
 # RDS Database Configuration
 # =====================

@@ -431,11 +431,11 @@ module "monitoring_alarms_dr" {
 }
 
 module "cicd" {
-  source                     = "../iac/cicd"
-  aws_region                 = data.aws_region.current.id
-  github_owner               = var.github_owner
-  github_repo                = var.github_repo
-  github_branch              = var.github_branch
+  source        = "../iac/cicd"
+  aws_region    = data.aws_region.current.id
+  github_owner  = var.github_owner
+  github_repo   = var.github_repo
+  github_branch = var.github_branch
   # github_token no longer needed with CodeStar Connection
   terraform_state_bucket     = "bardhi-ecom-terraform-state-dev"
   terraform_state_key        = "state/terraform.tfstate"

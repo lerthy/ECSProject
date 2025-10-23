@@ -20,13 +20,7 @@
             { "name": "DB_NAME", "value": "${db_name}" },
             { "name": "DB_USER", "value": "${db_username}" },
             { "name": "AWS_REGION", "value": "${aws_region}" },
-            { "name": "SECRETS_MANAGER_SECRET_NAME", "value": "${secrets_manager_secret_name}" }
-        ],
-        "secrets": [
-            {
-                "name": "DB_PASSWORD",
-                "valueFrom": "${secrets_manager_secret_arn}:password::"
-            }
+            { "name": "DB_SECRETS_ARN", "value": "${secrets_manager_secret_arn}" }
         ],
         "logConfiguration": {
             "logDriver": "awslogs",

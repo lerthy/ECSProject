@@ -39,7 +39,7 @@ phases:
   build:
     commands:
       - echo Creating and applying Terraform plan...
-      - terraform plan -detailed-exitcode -out=tfplan -var-file="ops/config/dev/terraform.tfvars"
+      - terraform plan -detailed-exitcode -out=tfplan -var-file="../config/dev/terraform.tfvars"
       - terraform show -json tfplan > tfplan.json
       - echo Applying Terraform changes...
       - terraform apply -auto-approve tfplan

@@ -12,7 +12,7 @@ This E-Commerce Observability Platform leverages AWS services and Terraform for 
 
 ### Architecture Diagram
 
-![Architecture Diagram Placeholder](finals123.png)
+![Architecture Diagram Placeholder](ARCHITECTURE_DIAGRAM.png)
 
 ---
 

@@ -166,9 +166,15 @@ router.post('/populate', async (req, res) => {
     const subsegment = createSubsegment('populate-database');
 
     try {
-        // Check if data already exists
-        const existingProducts = await dbConnection.query('SELECT COUNT(*) FROM products WHERE 1=1');
-        const productCount = parseInt(existingProducts.rows[0].count);
+        // Check if products table exists and has data
+        let productCount = 0;
+        try {
+            const existingProducts = await dbConnection.query('SELECT COUNT(*) FROM products WHERE 1=1');
+            productCount = parseInt(existingProducts.rows[0].count);
+        } catch (error) {
+            // Table doesn't exist yet, which is fine
+            console.log('Products table does not exist yet, proceeding with population');
+        }
 
         if (productCount > 0) {
             useSubsegment(subsegment, 'addAnnotation')('already_populated', true);
@@ -183,23 +189,24 @@ router.post('/populate', async (req, res) => {
         // Create tables and populate data
         const { populateDatabase } = require('../../scripts/populate-rds');
 
-        // Run population in the background to avoid timeout
-        setImmediate(async () => {
-            try {
-                await populateDatabase();
-                console.log('✅ Database population completed in background');
-            } catch (error) {
-                console.error('❌ Background database population failed:', error);
-            }
-        });
+        // Run population synchronously to ensure completion
+        await populateDatabase();
+        console.log('✅ Database population completed successfully');
 
-        useSubsegment(subsegment, 'addAnnotation')('population_started', true);
+        useSubsegment(subsegment, 'addAnnotation')('population_completed', true);
         useSubsegment(subsegment, 'close')();
 
+        // Get final counts
+        const categoriesResult = await dbConnection.query('SELECT COUNT(*) FROM categories');
+        const productsResult = await dbConnection.query('SELECT COUNT(*) FROM products');
+
         res.json({
-            message: 'Database population started',
-            status: 'in_progress',
-            note: 'Population is running in the background. Check /api/database/products in a few moments.'
+            message: 'Database population completed successfully',
+            status: 'completed',
+            results: {
+                categories_created: parseInt(categoriesResult.rows[0].count),
+                products_created: parseInt(productsResult.rows[0].count)
+            }
         });
 
     } catch (error) {

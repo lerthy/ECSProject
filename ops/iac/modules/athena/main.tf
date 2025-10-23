@@ -355,14 +355,8 @@ resource "aws_glue_catalog_table" "alb_logs" {
   }
 }
 
-# Use data source for existing Athena workgroup
-data "aws_athena_workgroup" "logs" {
-  name = var.workgroup_name
-}
-
-# Only create the workgroup if it doesn't exist
+# Athena workgroup - use lifecycle to prevent destruction
 resource "aws_athena_workgroup" "logs" {
-  count = data.aws_athena_workgroup.logs.name == "" ? 1 : 0
   name = var.workgroup_name
   configuration {
     result_configuration {
@@ -372,4 +366,12 @@ resource "aws_athena_workgroup" "logs" {
   state         = "ENABLED"
   force_destroy = true
   tags          = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      name,
+      configuration
+    ]
+  }
 }

@@ -33,12 +33,12 @@ output "master_username" {
 
 output "secrets_manager_secret_arn" {
   description = "ARN of the Secrets Manager secret containing database credentials"
-  value       = aws_secretsmanager_secret.rds_credentials.arn
+  value       = data.aws_secretsmanager_secret.rds_credentials.arn
 }
 
 output "secrets_manager_secret_name" {
   description = "Name of the Secrets Manager secret containing database credentials"
-  value       = aws_secretsmanager_secret.rds_credentials.name
+  value       = data.aws_secretsmanager_secret.rds_credentials.name
 }
 
 output "rds_security_group_id" {

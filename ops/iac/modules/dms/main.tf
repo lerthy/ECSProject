@@ -180,7 +180,7 @@ resource "aws_cloudwatch_metric_alarm" "dms_cpu_utilization" {
   ok_actions          = var.alarm_actions
 
   dimensions = {
-    ReplicationInstanceIdentifier = aws_dms_replication_instance.this.replication_instance_id
+    ReplicationInstanceIdentifier = data.aws_dms_replication_instance.this.replication_instance_id
   }
 
   tags = var.tags

@@ -81,15 +81,6 @@ resource "aws_s3_bucket_replication_configuration" "frontend" {
   depends_on = [aws_iam_role_policy.replication_policy]
 }
 
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 3.0"
-    }
-  }
-}
-
 # Data source for ELB service account - per best practices
 data "aws_elb_service_account" "main" {}
 

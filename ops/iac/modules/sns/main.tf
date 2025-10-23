@@ -51,14 +51,6 @@ resource "aws_sns_topic_subscription" "slack" {
   endpoint   = aws_lambda_function.slack_notifier[0].arn
   depends_on = [aws_lambda_permission.allow_sns]
 }
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 3.0"
-    }
-  }
-}
 
 # SNS Module
 resource "aws_sns_topic" "alerts" {

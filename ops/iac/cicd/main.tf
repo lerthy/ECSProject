@@ -217,7 +217,7 @@ resource "aws_codebuild_project" "backend" {
 # CodePipeline for Infrastructure
 resource "aws_codepipeline" "terraform" {
   name     = "ecommerce-terraform-pipeline"
-  role_arn = aws_iam_role.codepipeline.arn
+  role_arn = data.aws_iam_role.codepipeline.arn
 
   artifact_store {
     location = aws_s3_bucket.artifacts.bucket
@@ -331,7 +331,7 @@ resource "aws_codepipeline" "terraform" {
 # CodePipeline for Frontend
 resource "aws_codepipeline" "frontend" {
   name     = "ecommerce-frontend-pipeline"
-  role_arn = aws_iam_role.codepipeline.arn
+  role_arn = data.aws_iam_role.codepipeline.arn
 
   artifact_store {
     location = aws_s3_bucket.artifacts.bucket
@@ -420,7 +420,7 @@ resource "aws_codepipeline" "frontend" {
 # CodePipeline for Backend
 resource "aws_codepipeline" "backend" {
   name     = "ecommerce-backend-pipeline"
-  role_arn = aws_iam_role.codepipeline.arn
+  role_arn = data.aws_iam_role.codepipeline.arn
 
   artifact_store {
     location = aws_s3_bucket.artifacts.bucket

@@ -44,7 +44,7 @@ resource "aws_sns_topic_subscription" "slack" {
   count      = var.slack_webhook != "" ? 1 : 0
   topic_arn  = var.create_topic ? aws_sns_topic.alerts[0].arn : data.aws_sns_topic.alerts[0].arn
   protocol   = "lambda"
-  endpoint   = aws_lambda_function.slack_notifier[0].arn
+  endpoint   = data.aws_lambda_function.slack_notifier[0].arn
   depends_on = [aws_lambda_permission.allow_sns]
 }
 

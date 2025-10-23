@@ -123,31 +123,7 @@ variable "sns_alert_email" {
 variable "dashboard_body" {
   description = "JSON body for CloudWatch dashboard"
   type        = string
-  default     = jsonencode({
-    widgets = [
-      {
-        type   = "metric"
-        x      = 0
-        y      = 0
-        width  = 12
-        height = 6
-        properties = {
-          metrics = [
-            ["AWS/ECS", "CPUUtilization"],
-            [".", "MemoryUtilization"]
-          ]
-          view    = "timeSeries"
-          stacked = false
-          title   = "ECS Service Metrics"
-          period  = 300
-          region  = "us-east-1"
-          annotations = {
-            horizontal = []
-          }
-        }
-      }
-    ]
-  })
+  default     = "{\"widgets\":[{\"type\":\"metric\",\"x\":0,\"y\":0,\"width\":12,\"height\":6,\"properties\":{\"metrics\":[[\"AWS/ECS\",\"CPUUtilization\"],[\".\",\"MemoryUtilization\"]],\"view\":\"timeSeries\",\"stacked\":false,\"title\":\"ECS Service Metrics\",\"period\":300,\"region\":\"us-east-1\",\"annotations\":{\"horizontal\":[]}}}]}"
 }
 
 variable "environment" {

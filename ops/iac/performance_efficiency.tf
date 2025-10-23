@@ -1,24 +1,7 @@
 # Performance Efficiency: CloudFront, S3, Athena
 
 # CloudFront caching and performance settings are handled in the cloudfront module.
-# S3 performance optimizations: Enable transfer acceleration and intelligent tiering
-resource "aws_s3_bucket_accelerate_configuration" "frontend" {
-  bucket = module.s3.frontend_bucket_name
-  status = "Enabled"
-}
-
-resource "aws_s3_bucket_intelligent_tiering_configuration" "frontend" {
-  bucket = module.s3.frontend_bucket_name
-  name   = "it"
-  tiering {
-    access_tier = "ARCHIVE_ACCESS"
-    days        = 90
-  }
-  tiering {
-    access_tier = "DEEP_ARCHIVE_ACCESS"
-    days        = 180
-  }
-}
+# S3 performance optimizations are handled in cost_optimization.tf to avoid duplicates
 
 # Athena query example for optimized log analysis
 resource "aws_athena_named_query" "ecs_logs" {

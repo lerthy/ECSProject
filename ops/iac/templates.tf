@@ -1,7 +1,6 @@
 # Template configurations for ECS container definitions and other dynamic content
 
-# Get current AWS region
-data "aws_region" "current" {}
+# Get current AWS region - using the one defined in cost_optimization.tf to avoid duplicates
 
 
 # Template for ECS container definition with RDS integration using templatefile()

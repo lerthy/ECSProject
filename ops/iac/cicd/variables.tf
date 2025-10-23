@@ -1,5 +1,10 @@
 # Variables for CI/CD module
 
+variable "aws_region" {
+	description = "AWS region"
+	type        = string
+}
+
 variable "github_owner" {
 	description = "GitHub repository owner (your username, not necessarily the original repo owner)"
 	type        = string

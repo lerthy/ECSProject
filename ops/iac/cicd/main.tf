@@ -2,7 +2,6 @@
 
 # Data sources
 data "aws_caller_identity" "current" {}
-data "aws_region" "current" {}
 
 # S3 bucket for pipeline artifacts
 resource "aws_s3_bucket" "artifacts" {
@@ -72,7 +71,7 @@ resource "aws_codebuild_project" "terraform" {
 
 		environment_variable {
 			name  = "AWS_DEFAULT_REGION"
-			value = data.aws_region.current.id
+			value = var.aws_region
 		}
 	}
 
@@ -136,7 +135,7 @@ resource "aws_codebuild_project" "frontend" {
 
 		environment_variable {
 			name  = "AWS_DEFAULT_REGION"
-			value = data.aws_region.current.id
+			value = var.aws_region
 		}
 	}
 
@@ -191,7 +190,7 @@ resource "aws_codebuild_project" "backend" {
 
 		environment_variable {
 			name  = "AWS_DEFAULT_REGION"
-			value = data.aws_region.current.id
+			value = var.aws_region
 		}
 	}
 

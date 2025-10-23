@@ -94,73 +94,73 @@ EOF
         
         # Import IAM roles
         echo "Importing IAM roles..."
-        terraform import aws_iam_role.config config-recorder-role 2>/dev/null || echo "config-recorder-role not found"
-        terraform import module.dms.aws_iam_role.dms_vpc_role dms-vpc-role 2>/dev/null || echo "dms-vpc-role not found"
-        terraform import module.ecs.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-ecs-task-execution 2>/dev/null || echo "ECS task execution role not found"
-        terraform import module.ecs_standby.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-standby-ecs-task-execution 2>/dev/null || echo "ECS standby task execution role not found"
-        terraform import module.ecs_dr.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-dr-ecs-task-execution 2>/dev/null || echo "ECS DR task execution role not found"
-        terraform import module.rds.aws_iam_role.rds_enhanced_monitoring ecommerce-ecs-dev-db-rds-enhanced-monitoring 2>/dev/null || echo "RDS enhanced monitoring role not found"
-        terraform import module.rds_standby.aws_iam_role.rds_enhanced_monitoring ecommerce-ecs-dev-db-standby-rds-enhanced-monitoring 2>/dev/null || echo "RDS standby enhanced monitoring role not found"
-        terraform import module.rds_dr.aws_iam_role.rds_enhanced_monitoring ecommerce-ecs-dev-db-dr-rds-enhanced-monitoring 2>/dev/null || echo "RDS DR enhanced monitoring role not found"
-        terraform import module.xray.aws_iam_role.xray ecommerce-ecs-dev-xray-role 2>/dev/null || echo "X-Ray role not found"
-        terraform import module.xray_dr.aws_iam_role.xray ecommerce-ecs-dev-xray-role 2>/dev/null || echo "X-Ray DR role not found"
-        terraform import module.sns.aws_iam_role.lambda_slack_notifier[0] lambda-sns-slack-notifier-alerts 2>/dev/null || echo "SNS role not found"
-        terraform import module.sns_dr.aws_iam_role.lambda_slack_notifier[0] lambda-sns-slack-notifier-alerts-dr 2>/dev/null || echo "SNS DR role not found"
-        terraform import module.cicd.aws_iam_role.codepipeline ecommerce-codepipeline-role 2>/dev/null || echo "CodePipeline role not found"
-        terraform import module.cicd.aws_iam_role.codebuild ecommerce-codebuild-role 2>/dev/null || echo "CodeBuild role not found"
+        terraform import aws_iam_role.config config-recorder-role || echo "config-recorder-role not found"
+        terraform import module.dms.aws_iam_role.dms_vpc_role dms-vpc-role || echo "dms-vpc-role not found"
+        terraform import module.ecs.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-ecs-task-execution || echo "ECS task execution role not found"
+        terraform import module.ecs_standby.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-standby-ecs-task-execution || echo "ECS standby task execution role not found"
+        terraform import module.ecs_dr.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-dr-ecs-task-execution || echo "ECS DR task execution role not found"
+        terraform import module.rds.aws_iam_role.rds_enhanced_monitoring ecommerce-ecs-dev-db-rds-enhanced-monitoring || echo "RDS enhanced monitoring role not found"
+        terraform import module.rds_standby.aws_iam_role.rds_enhanced_monitoring ecommerce-ecs-dev-db-standby-rds-enhanced-monitoring || echo "RDS standby enhanced monitoring role not found"
+        terraform import module.rds_dr.aws_iam_role.rds_enhanced_monitoring ecommerce-ecs-dev-db-dr-rds-enhanced-monitoring || echo "RDS DR enhanced monitoring role not found"
+        terraform import module.xray.aws_iam_role.xray ecommerce-ecs-dev-xray-role || echo "X-Ray role not found"
+        terraform import module.xray_dr.aws_iam_role.xray ecommerce-ecs-dev-xray-role || echo "X-Ray DR role not found"
+        terraform import module.sns.aws_iam_role.lambda_slack_notifier[0] lambda-sns-slack-notifier-alerts || echo "SNS role not found"
+        terraform import module.sns_dr.aws_iam_role.lambda_slack_notifier[0] lambda-sns-slack-notifier-alerts-dr || echo "SNS DR role not found"
+        terraform import module.cicd.aws_iam_role.codepipeline ecommerce-codepipeline-role || echo "CodePipeline role not found"
+        terraform import module.cicd.aws_iam_role.codebuild ecommerce-codebuild-role || echo "CodeBuild role not found"
         
         # Import secrets
         echo "Importing secrets..."
-        terraform import aws_secretsmanager_secret.app app/secret 2>/dev/null || echo "app/secret not found"
-        terraform import module.rds.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-rds-credentials 2>/dev/null || echo "RDS credentials secret not found"
-        terraform import module.rds_standby.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-standby-rds-credentials 2>/dev/null || echo "RDS standby credentials secret not found"
-        terraform import module.rds_dr.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-dr-rds-credentials 2>/dev/null || echo "RDS DR credentials secret not found"
+        terraform import aws_secretsmanager_secret.app app/secret || echo "app/secret not found"
+        terraform import module.rds.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-rds-credentials || echo "RDS credentials secret not found"
+        terraform import module.rds_standby.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-standby-rds-credentials || echo "RDS standby credentials secret not found"
+        terraform import module.rds_dr.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-dr-rds-credentials || echo "RDS DR credentials secret not found"
         
         # Import WAF resources
         echo "Importing WAF resources..."
-        terraform import aws_wafv2_web_acl.cloudfront "arn:aws:wafv2:us-east-1:$ACCOUNT_ID:global/webacl/cloudfront-waf" 2>/dev/null || echo "CloudFront WAF not found"
-        terraform import aws_wafv2_web_acl.alb "arn:aws:wafv2:us-east-1:$ACCOUNT_ID:regional/webacl/alb-waf" 2>/dev/null || echo "ALB WAF not found"
+        terraform import aws_wafv2_web_acl.cloudfront "arn:aws:wafv2:us-east-1:$ACCOUNT_ID:global/webacl/cloudfront-waf" || echo "CloudFront WAF not found"
+        terraform import aws_wafv2_web_acl.alb "arn:aws:wafv2:us-east-1:$ACCOUNT_ID:regional/webacl/alb-waf" || echo "ALB WAF not found"
         
         # Import Athena resources
         echo "Importing Athena resources..."
-        terraform import module.athena.aws_athena_workgroup.logs ecommerce_workgroup 2>/dev/null || echo "Athena workgroup not found"
-        terraform import module.athena_dr.aws_athena_workgroup.logs ecommerce_workgroup 2>/dev/null || echo "Athena DR workgroup not found"
+        terraform import module.athena.aws_athena_workgroup.logs ecommerce_workgroup || echo "Athena workgroup not found"
+        terraform import module.athena_dr.aws_athena_workgroup.logs ecommerce_workgroup || echo "Athena DR workgroup not found"
         
         # Import CloudWatch resources
         echo "Importing CloudWatch resources..."
-        terraform import module.cloudwatch.aws_cloudwatch_log_group.ecs /ecs/ecommerce-ecs-dev 2>/dev/null || echo "CloudWatch log group not found"
-        terraform import module.cloudwatch_dr.aws_cloudwatch_log_group.ecs /ecs/ecommerce-ecs-dev 2>/dev/null || echo "CloudWatch DR log group not found"
+        terraform import module.cloudwatch.aws_cloudwatch_log_group.ecs /ecs/ecommerce-ecs-dev || echo "CloudWatch log group not found"
+        terraform import module.cloudwatch_dr.aws_cloudwatch_log_group.ecs /ecs/ecommerce-ecs-dev || echo "CloudWatch DR log group not found"
         
         # Import DMS resources
         echo "Importing DMS resources..."
-        terraform import module.dms.aws_dms_replication_instance.this cross-region-dms-instance 2>/dev/null || echo "DMS replication instance not found"
-        terraform import module.dms.aws_dms_endpoint.source source-db-endpoint 2>/dev/null || echo "DMS source endpoint not found"
-        terraform import module.dms.aws_dms_endpoint.target target-db-endpoint 2>/dev/null || echo "DMS target endpoint not found"
+        terraform import module.dms.aws_dms_replication_instance.this cross-region-dms-instance || echo "DMS replication instance not found"
+        terraform import module.dms.aws_dms_endpoint.source source-db-endpoint || echo "DMS source endpoint not found"
+        terraform import module.dms.aws_dms_endpoint.target target-db-endpoint || echo "DMS target endpoint not found"
         
         # Import ECR resources
         echo "Importing ECR resources..."
-        terraform import module.ecr.aws_ecr_repository.backend ecommerce-backend-dev 2>/dev/null || echo "ECR repository not found"
-        terraform import module.ecr_dr.aws_ecr_repository.backend ecommerce-backend-dev 2>/dev/null || echo "ECR DR repository not found"
+        terraform import module.ecr.aws_ecr_repository.backend ecommerce-backend-dev || echo "ECR repository not found"
+        terraform import module.ecr_dr.aws_ecr_repository.backend ecommerce-backend-dev || echo "ECR DR repository not found"
         
         # Import RDS parameter groups
         echo "Importing RDS parameter groups..."
-        terraform import module.rds.aws_db_parameter_group.this ecommerce-ecs-dev-db-db-parameter-group 2>/dev/null || echo "RDS parameter group not found"
-        terraform import module.rds_standby.aws_db_parameter_group.this ecommerce-ecs-dev-db-standby-db-parameter-group 2>/dev/null || echo "RDS standby parameter group not found"
-        terraform import module.rds_dr.aws_db_parameter_group.this ecommerce-ecs-dev-db-dr-db-parameter-group 2>/dev/null || echo "RDS DR parameter group not found"
+        terraform import module.rds.aws_db_parameter_group.this ecommerce-ecs-dev-db-db-parameter-group || echo "RDS parameter group not found"
+        terraform import module.rds_standby.aws_db_parameter_group.this ecommerce-ecs-dev-db-standby-db-parameter-group || echo "RDS standby parameter group not found"
+        terraform import module.rds_dr.aws_db_parameter_group.this ecommerce-ecs-dev-db-dr-db-parameter-group || echo "RDS DR parameter group not found"
         
         # Import S3 buckets
         echo "Importing S3 buckets..."
-        terraform import module.s3.aws_s3_bucket.frontend ecommerce-frontend-dev 2>/dev/null || echo "S3 frontend bucket not found"
-        terraform import module.s3.aws_s3_bucket.alb_logs ecommerce-alb-logs-dev 2>/dev/null || echo "S3 ALB logs bucket not found"
-        terraform import module.s3.aws_s3_bucket.cloudfront_logs ecommerce-cloudfront-logs-dev 2>/dev/null || echo "S3 CloudFront logs bucket not found"
-        terraform import module.s3_dr.aws_s3_bucket.frontend ecommerce-frontend-dr 2>/dev/null || echo "S3 DR frontend bucket not found"
-        terraform import module.s3_dr.aws_s3_bucket.alb_logs ecommerce-alb-logs-dr 2>/dev/null || echo "S3 DR ALB logs bucket not found"
-        terraform import module.s3_dr.aws_s3_bucket.cloudfront_logs ecommerce-cloudfront-logs-dr 2>/dev/null || echo "S3 DR CloudFront logs bucket not found"
+        terraform import module.s3.aws_s3_bucket.frontend ecommerce-frontend-dev || echo "S3 frontend bucket not found"
+        terraform import module.s3.aws_s3_bucket.alb_logs ecommerce-alb-logs-dev || echo "S3 ALB logs bucket not found"
+        terraform import module.s3.aws_s3_bucket.cloudfront_logs ecommerce-cloudfront-logs-dev || echo "S3 CloudFront logs bucket not found"
+        terraform import module.s3_dr.aws_s3_bucket.frontend ecommerce-frontend-dr || echo "S3 DR frontend bucket not found"
+        terraform import module.s3_dr.aws_s3_bucket.alb_logs ecommerce-alb-logs-dr || echo "S3 DR ALB logs bucket not found"
+        terraform import module.s3_dr.aws_s3_bucket.cloudfront_logs ecommerce-cloudfront-logs-dr || echo "S3 DR CloudFront logs bucket not found"
         
         # Import X-Ray groups
         echo "Importing X-Ray groups..."
-        terraform import module.xray.aws_xray_group.default ecommerce-ecs-dev 2>/dev/null || echo "X-Ray group not found"
-        terraform import module.xray_dr.aws_xray_group.default ecommerce-ecs-dev 2>/dev/null || echo "X-Ray DR group not found"
+        terraform import module.xray.aws_xray_group.default ecommerce-ecs-dev || echo "X-Ray group not found"
+        terraform import module.xray_dr.aws_xray_group.default ecommerce-ecs-dev || echo "X-Ray DR group not found"
         
         echo "=== RESOURCE IMPORT COMPLETED ==="
       

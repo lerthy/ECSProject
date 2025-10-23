@@ -86,8 +86,8 @@ module "vpc" {
   db_subnets       = var.db_subnets
   azs              = var.azs
   tags             = var.tags
-  use_existing_vpc = var.use_existing_vpc      # Use existing VPC to prevent VpcLimitExceeded errors
-  existing_vpc_id  = ""                         # Will auto-detect by name tag
+  use_existing_vpc = var.use_existing_vpc # Use existing VPC to prevent VpcLimitExceeded errors
+  existing_vpc_id  = ""                   # Will auto-detect by name tag
 }
 
 # VPC in eu-north-1 (DR region)
@@ -101,8 +101,8 @@ module "vpc_dr" {
   db_subnets       = var.db_subnets_dr
   azs              = var.azs_dr
   tags             = var.tags
-  use_existing_vpc = var.use_existing_vpc      # Use existing VPC to prevent VpcLimitExceeded errors
-  existing_vpc_id  = ""                         # Will auto-detect by name tag
+  use_existing_vpc = var.use_existing_vpc # Use existing VPC to prevent VpcLimitExceeded errors
+  existing_vpc_id  = ""                   # Will auto-detect by name tag
 }
 
 module "rds" {
@@ -452,10 +452,10 @@ module "cicd" {
   ecs_service_name           = module.ecs.service_name
   frontend_bucket_name       = module.s3.frontend_bucket_name
   cloudfront_distribution_id = module.cloudfront.distribution_id
-  alb_name       = var.alb_name
-  app_health_url = "https://${module.alb.alb_dns_name}"
-  sns_topic_arn  = module.sns.sns_topic_arn
-  tags           = var.tags
+  alb_name                   = var.alb_name
+  app_health_url             = "https://${module.alb.alb_dns_name}"
+  sns_topic_arn              = module.sns.sns_topic_arn
+  tags                       = var.tags
 }
 
 module "ecr" {

@@ -73,7 +73,7 @@ resource "aws_secretsmanager_secret_version" "app" {
   count         = var.app_secret_string != "" ? 1 : 0
   secret_id     = data.aws_secretsmanager_secret.app.id
   secret_string = var.app_secret_string
-  
+
   lifecycle {
     # Ignore changes to prevent overwriting secrets during subsequent applies
     ignore_changes = [secret_string]

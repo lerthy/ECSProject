@@ -12,7 +12,7 @@ terraform {
 data "aws_vpc" "existing" {
   count = var.use_existing_vpc ? 1 : 0
   id    = var.existing_vpc_id != "" ? var.existing_vpc_id : null
-  
+
   # If no VPC ID provided, find by name tag
   dynamic "filter" {
     for_each = var.existing_vpc_id == "" ? [1] : []

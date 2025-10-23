@@ -50,8 +50,8 @@ module "dms" {
 
   replication_task_id       = "cross-region-task"
   migration_type            = "full-load-and-cdc"
-  table_mappings            = file("${path.module}/dms-table-mappings.json")
-  replication_task_settings = file("${path.module}/dms-task-settings.json")
+  table_mappings            = file("${path.module}/table-mappings.json")
+  replication_task_settings = file("${path.module}/task-settings.json")
 }
 
 module "s3" {
@@ -431,7 +431,7 @@ module "monitoring_alarms_dr" {
 
 module "cicd" {
   source                     = "../iac/cicd"
-  aws_region                 = data.aws_region.current.name
+  aws_region                 = data.aws_region.current.id
   github_owner               = var.github_owner
   github_repo                = var.github_repo
   github_branch              = var.github_branch

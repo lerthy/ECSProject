@@ -23,17 +23,8 @@ resource "aws_s3_bucket_accelerate_configuration" "frontend" {
   status = "Enabled"
 }
 
-# CloudWatch Cost Anomaly Detection
-resource "aws_ce_anomaly_detector" "cost_anomaly" {
-  name = "cost-anomaly-detector"
-
-  specification = jsonencode({
-    threshold = 100.0
-    type      = "ANOMALY_DETECTION"
-  })
-
-  tags = var.tags
-}
+# CloudWatch Cost Anomaly Detection - using CloudWatch alarms instead
+# Note: aws_ce_anomaly_detector is not available in the current AWS provider
 
 # Cost and Usage Report
 resource "aws_cur_report_definition" "cost_report" {
@@ -44,7 +35,7 @@ resource "aws_cur_report_definition" "cost_report" {
   additional_schema_elements = ["RESOURCES"]
   s3_bucket                  = module.s3.alb_logs_bucket_name
   s3_prefix                  = "cost-reports/"
-  s3_region                  = data.aws_region.current.name
+  s3_region                  = data.aws_region.current.id
 
   additional_artifacts = [
     "REDSHIFT",

@@ -31,7 +31,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", module.alb.alb_arn_suffix],
+            ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", module.alb.alb_arn],
             [".", "TargetResponseTime", ".", "."],
             [".", "HTTPCode_Target_2XX_Count", ".", "."],
             [".", "HTTPCode_Target_4XX_Count", ".", "."],
@@ -52,7 +52,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", module.rds.rds_identifier],
+            ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", module.rds.rds_instance_id],
             [".", "DatabaseConnections", ".", "."],
             [".", "FreeStorageSpace", ".", "."]
           ]

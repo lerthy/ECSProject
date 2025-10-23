@@ -5,10 +5,9 @@ resource "aws_athena_database" "logs" {
 }
 
 # CloudFront logs table
-resource "aws_athena_table" "cloudfront_logs" {
-  name       = "cloudfront_logs"
-  database   = aws_athena_database.logs.name
-  table_type = "EXTERNAL_TABLE"
+resource "aws_glue_catalog_table" "cloudfront_logs" {
+  name          = "cloudfront_logs"
+  database_name = aws_athena_database.logs.name
 
   storage_descriptor {
     location      = "s3://${var.cloudfront_logs_bucket}/"
@@ -167,10 +166,9 @@ resource "aws_athena_table" "cloudfront_logs" {
 }
 
 # ALB logs table
-resource "aws_athena_table" "alb_logs" {
-  name       = "alb_logs"
-  database   = aws_athena_database.logs.name
-  table_type = "EXTERNAL_TABLE"
+resource "aws_glue_catalog_table" "alb_logs" {
+  name          = "alb_logs"
+  database_name = aws_athena_database.logs.name
 
   storage_descriptor {
     location      = "s3://${var.s3_bucket}/"

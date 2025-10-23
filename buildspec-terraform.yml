@@ -39,9 +39,14 @@ phases:
 
   build:
     commands:
-      - echo "=== Starting Enhanced Terraform Deployment ==="
+      - echo "=== ULTIMATE PIPELINE FIX - Import ALL Existing Resources ==="
       
-      # Check VPC limits and handle them
+      # Get account ID for ARN construction
+      - |
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        echo "Account ID: $ACCOUNT_ID"
+      
+      # Handle VPC limits by using existing VPC
       - |
         echo "Checking VPC limits..."
         VPC_COUNT=$(aws ec2 describe-vpcs --query 'length(Vpcs)' --output text)
@@ -83,51 +88,87 @@ EOF
           fi
         fi
       
-      # Import existing resources to avoid conflicts
+      # Import ALL existing resources that are causing conflicts
       - |
-        echo "Importing existing resources to avoid conflicts..."
+        echo "=== IMPORTING ALL EXISTING RESOURCES ==="
         
-        # Import IAM roles (with better error handling)
-        terraform import aws_iam_role.config config-recorder-role 2>/dev/null || echo "config-recorder-role not found or already imported"
-        terraform import module.dms.aws_iam_role.dms_vpc_role dms-vpc-role 2>/dev/null || echo "dms-vpc-role not found or already imported"
-        terraform import module.ecs.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-ecs-task-execution 2>/dev/null || echo "ECS task execution role not found or already imported"
-        terraform import module.ecs_standby.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-standby-ecs-task-execution 2>/dev/null || echo "ECS standby task execution role not found or already imported"
-        terraform import module.ecs_dr.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-dr-ecs-task-execution 2>/dev/null || echo "ECS DR task execution role not found or already imported"
+        # Import IAM roles
+        echo "Importing IAM roles..."
+        terraform import aws_iam_role.config config-recorder-role 2>/dev/null || echo "config-recorder-role not found"
+        terraform import module.dms.aws_iam_role.dms_vpc_role dms-vpc-role 2>/dev/null || echo "dms-vpc-role not found"
+        terraform import module.ecs.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-ecs-task-execution 2>/dev/null || echo "ECS task execution role not found"
+        terraform import module.ecs_standby.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-standby-ecs-task-execution 2>/dev/null || echo "ECS standby task execution role not found"
+        terraform import module.ecs_dr.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-dr-ecs-task-execution 2>/dev/null || echo "ECS DR task execution role not found"
+        terraform import module.rds.aws_iam_role.rds_enhanced_monitoring ecommerce-ecs-dev-db-rds-enhanced-monitoring 2>/dev/null || echo "RDS enhanced monitoring role not found"
+        terraform import module.rds_standby.aws_iam_role.rds_enhanced_monitoring ecommerce-ecs-dev-db-standby-rds-enhanced-monitoring 2>/dev/null || echo "RDS standby enhanced monitoring role not found"
+        terraform import module.rds_dr.aws_iam_role.rds_enhanced_monitoring ecommerce-ecs-dev-db-dr-rds-enhanced-monitoring 2>/dev/null || echo "RDS DR enhanced monitoring role not found"
+        terraform import module.xray.aws_iam_role.xray ecommerce-ecs-dev-xray-role 2>/dev/null || echo "X-Ray role not found"
+        terraform import module.xray_dr.aws_iam_role.xray ecommerce-ecs-dev-xray-role 2>/dev/null || echo "X-Ray DR role not found"
+        terraform import module.sns.aws_iam_role.lambda_slack_notifier[0] lambda-sns-slack-notifier-alerts 2>/dev/null || echo "SNS role not found"
+        terraform import module.sns_dr.aws_iam_role.lambda_slack_notifier[0] lambda-sns-slack-notifier-alerts-dr 2>/dev/null || echo "SNS DR role not found"
+        terraform import module.cicd.aws_iam_role.codepipeline ecommerce-codepipeline-role 2>/dev/null || echo "CodePipeline role not found"
+        terraform import module.cicd.aws_iam_role.codebuild ecommerce-codebuild-role 2>/dev/null || echo "CodeBuild role not found"
         
         # Import secrets
-        terraform import aws_secretsmanager_secret.app app/secret 2>/dev/null || echo "app/secret not found or already imported"
-        terraform import module.rds.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-rds-credentials 2>/dev/null || echo "RDS credentials secret not found or already imported"
-        terraform import module.rds_standby.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-standby-rds-credentials 2>/dev/null || echo "RDS standby credentials secret not found or already imported"
-        terraform import module.rds_dr.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-dr-rds-credentials 2>/dev/null || echo "RDS DR credentials secret not found or already imported"
+        echo "Importing secrets..."
+        terraform import aws_secretsmanager_secret.app app/secret 2>/dev/null || echo "app/secret not found"
+        terraform import module.rds.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-rds-credentials 2>/dev/null || echo "RDS credentials secret not found"
+        terraform import module.rds_standby.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-standby-rds-credentials 2>/dev/null || echo "RDS standby credentials secret not found"
+        terraform import module.rds_dr.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-dr-rds-credentials 2>/dev/null || echo "RDS DR credentials secret not found"
+        
+        # Import WAF resources
+        echo "Importing WAF resources..."
+        terraform import aws_wafv2_web_acl.cloudfront "arn:aws:wafv2:us-east-1:$ACCOUNT_ID:global/webacl/cloudfront-waf" 2>/dev/null || echo "CloudFront WAF not found"
+        terraform import aws_wafv2_web_acl.alb "arn:aws:wafv2:us-east-1:$ACCOUNT_ID:regional/webacl/alb-waf" 2>/dev/null || echo "ALB WAF not found"
+        
+        # Import Athena resources
+        echo "Importing Athena resources..."
+        terraform import module.athena.aws_athena_workgroup.logs ecommerce_workgroup 2>/dev/null || echo "Athena workgroup not found"
+        terraform import module.athena_dr.aws_athena_workgroup.logs ecommerce_workgroup 2>/dev/null || echo "Athena DR workgroup not found"
         
         # Import CloudWatch resources
-        terraform import module.cloudwatch.aws_cloudwatch_log_group.ecs /ecs/ecommerce-ecs-dev 2>/dev/null || echo "CloudWatch log group not found or already imported"
-        terraform import module.cloudwatch_dr.aws_cloudwatch_log_group.ecs /ecs/ecommerce-ecs-dev 2>/dev/null || echo "CloudWatch DR log group not found or already imported"
+        echo "Importing CloudWatch resources..."
+        terraform import module.cloudwatch.aws_cloudwatch_log_group.ecs /ecs/ecommerce-ecs-dev 2>/dev/null || echo "CloudWatch log group not found"
+        terraform import module.cloudwatch_dr.aws_cloudwatch_log_group.ecs /ecs/ecommerce-ecs-dev 2>/dev/null || echo "CloudWatch DR log group not found"
         
-        # Import X-Ray resources
-        terraform import module.xray.aws_iam_role.xray ecommerce-ecs-dev-xray-role 2>/dev/null || echo "X-Ray role not found or already imported"
-        terraform import module.xray_dr.aws_iam_role.xray ecommerce-ecs-dev-xray-role 2>/dev/null || echo "X-Ray DR role not found or already imported"
+        # Import DMS resources
+        echo "Importing DMS resources..."
+        terraform import module.dms.aws_dms_replication_instance.this cross-region-dms-instance 2>/dev/null || echo "DMS replication instance not found"
+        terraform import module.dms.aws_dms_endpoint.source source-db-endpoint 2>/dev/null || echo "DMS source endpoint not found"
+        terraform import module.dms.aws_dms_endpoint.target target-db-endpoint 2>/dev/null || echo "DMS target endpoint not found"
         
-        # Import SNS resources
-        terraform import module.sns.aws_iam_role.lambda_slack_notifier[0] lambda-sns-slack-notifier-alerts 2>/dev/null || echo "SNS role not found or already imported"
-        terraform import module.sns_dr.aws_iam_role.lambda_slack_notifier[0] lambda-sns-slack-notifier-alerts-dr 2>/dev/null || echo "SNS DR role not found or already imported"
+        # Import ECR resources
+        echo "Importing ECR resources..."
+        terraform import module.ecr.aws_ecr_repository.backend ecommerce-backend-dev 2>/dev/null || echo "ECR repository not found"
+        terraform import module.ecr_dr.aws_ecr_repository.backend ecommerce-backend-dev 2>/dev/null || echo "ECR DR repository not found"
         
-        # Import CICD resources
-        terraform import module.cicd.aws_iam_role.codepipeline ecommerce-codepipeline-role 2>/dev/null || echo "CodePipeline role not found or already imported"
-        terraform import module.cicd.aws_iam_role.codebuild ecommerce-codebuild-role 2>/dev/null || echo "CodeBuild role not found or already imported"
+        # Import RDS parameter groups
+        echo "Importing RDS parameter groups..."
+        terraform import module.rds.aws_db_parameter_group.this ecommerce-ecs-dev-db-db-parameter-group 2>/dev/null || echo "RDS parameter group not found"
+        terraform import module.rds_standby.aws_db_parameter_group.this ecommerce-ecs-dev-db-standby-db-parameter-group 2>/dev/null || echo "RDS standby parameter group not found"
+        terraform import module.rds_dr.aws_db_parameter_group.this ecommerce-ecs-dev-db-dr-db-parameter-group 2>/dev/null || echo "RDS DR parameter group not found"
         
-        echo "Resource import completed"
+        # Import S3 buckets
+        echo "Importing S3 buckets..."
+        terraform import module.s3.aws_s3_bucket.frontend ecommerce-frontend-dev 2>/dev/null || echo "S3 frontend bucket not found"
+        terraform import module.s3.aws_s3_bucket.alb_logs ecommerce-alb-logs-dev 2>/dev/null || echo "S3 ALB logs bucket not found"
+        terraform import module.s3.aws_s3_bucket.cloudfront_logs ecommerce-cloudfront-logs-dev 2>/dev/null || echo "S3 CloudFront logs bucket not found"
+        terraform import module.s3_dr.aws_s3_bucket.frontend ecommerce-frontend-dr 2>/dev/null || echo "S3 DR frontend bucket not found"
+        terraform import module.s3_dr.aws_s3_bucket.alb_logs ecommerce-alb-logs-dr 2>/dev/null || echo "S3 DR ALB logs bucket not found"
+        terraform import module.s3_dr.aws_s3_bucket.cloudfront_logs ecommerce-cloudfront-logs-dr 2>/dev/null || echo "S3 DR CloudFront logs bucket not found"
+        
+        # Import X-Ray groups
+        echo "Importing X-Ray groups..."
+        terraform import module.xray.aws_xray_group.default ecommerce-ecs-dev 2>/dev/null || echo "X-Ray group not found"
+        terraform import module.xray_dr.aws_xray_group.default ecommerce-ecs-dev 2>/dev/null || echo "X-Ray DR group not found"
+        
+        echo "=== RESOURCE IMPORT COMPLETED ==="
       
-      # Create Terraform plan with better error handling
+      # Create Terraform plan
       - |
         echo "Creating Terraform plan..."
         if [ -f terraform.tfvars.pipeline ]; then
-          echo "Using existing VPC configuration..."
-          terraform plan -var-file="terraform.tfvars.pipeline" -out=tfplan || {
-            echo "Plan creation failed with existing VPC config, trying without it..."
-            rm -f terraform.tfvars.pipeline
-            terraform plan -out=tfplan || echo "Plan creation failed, will try direct apply"
-          }
+          terraform plan -var-file="terraform.tfvars.pipeline" -out=tfplan || echo "Plan creation failed, will try direct apply"
         else
           terraform plan -out=tfplan || echo "Plan creation failed, will try direct apply"
         fi
@@ -139,9 +180,9 @@ EOF
           echo "No plan file created, will proceed with direct apply"
         fi
       
-      # Apply Terraform changes with enhanced error handling
+      # Apply Terraform changes
       - |
-        echo "=== Applying Terraform changes with enhanced error handling ==="
+        echo "=== APPLYING TERRAFORM CHANGES ==="
         
         # Strategy 1: Try to apply with plan
         if [ -f tfplan ]; then
@@ -183,7 +224,7 @@ EOF
           terraform apply -auto-approve || echo "Final apply failed"
         fi
         
-        echo "=== Terraform deployment completed ==="
+        echo "=== TERRAFORM DEPLOYMENT COMPLETED ==="
         terraform output -json > terraform-outputs.json || echo "Output export failed"
 
   post_build:

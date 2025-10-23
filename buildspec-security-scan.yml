@@ -5,7 +5,10 @@ phases:
     commands:
       - echo "Installing security scanning tools..."
       - pip install checkov
-      - curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/main/scripts/install_linux.sh | bash
+      - echo "Installing tfsec..."
+      - wget -O tfsec https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64
+      - chmod +x tfsec
+      - mv tfsec /usr/local/bin/
       - echo "Security scanning tools installed successfully"
 
   build:

@@ -1,0 +1,58 @@
+version: 0.2
+
+env:
+  variables:
+    TF_VERSION: "1.6.0"
+    TF_IN_AUTOMATION: "true"
+    TF_INPUT: "false"
+    TF_WORKSPACE: "dev"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo Installing Terraform...
+      - wget https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip
+      - unzip terraform_${TF_VERSION}_linux_amd64.zip
+      - mv terraform /usr/local/bin/
+      - terraform version
+      - echo Installing additional tools...
+      - pip3 install awscli --upgrade
+
+  pre_build:
+    commands:
+      - echo Starting Terraform Plan operations...
+      - cd ops/iac
+      - echo Initializing Terraform...
+      - terraform init -backend=false
+      - echo Formatting and validating Terraform...
+      - terraform fmt -check -recursive
+      - terraform validate
+      - echo Setting up Terraform backend...
+      - terraform init -backend-config="bucket=$TF_BACKEND_BUCKET" -backend-config="key=$TF_BACKEND_KEY" -backend-config="region=us-east-1"
+
+  build:
+    commands:
+      - echo "=== Creating Terraform Plan ==="
+      - echo "Running terraform plan..."
+      - terraform plan -out=tfplan -detailed-exitcode
+      - echo "Plan created successfully"
+      - terraform show -json tfplan > tfplan.json
+      - echo "Plan JSON exported"
+
+  post_build:
+    commands:
+      - echo "Terraform plan completed on $(date)"
+      - echo "Plan summary:"
+      - terraform show tfplan | head -20 || echo "Plan display failed"
+
+artifacts:
+  files:
+    - ops/iac/tfplan
+    - ops/iac/tfplan.json
+  name: terraform-plan-artifacts
+
+cache:
+  paths:
+    - '/root/.terraform.d/plugin-cache/**/*'

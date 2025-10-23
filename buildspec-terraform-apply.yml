@@ -1,0 +1,78 @@
+version: 0.2
+
+env:
+  variables:
+    TF_VERSION: "1.6.0"
+    TF_IN_AUTOMATION: "true"
+    TF_INPUT: "false"
+    TF_WORKSPACE: "dev"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo Installing Terraform...
+      - wget https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip
+      - unzip terraform_${TF_VERSION}_linux_amd64.zip
+      - mv terraform /usr/local/bin/
+      - terraform version
+      - echo Installing additional tools...
+      - pip3 install awscli --upgrade
+
+  pre_build:
+    commands:
+      - echo Starting Terraform Apply operations...
+      - cd ops/iac
+      - echo Initializing Terraform...
+      - terraform init -backend-config="bucket=$TF_BACKEND_BUCKET" -backend-config="key=$TF_BACKEND_KEY" -backend-config="region=us-east-1"
+
+  build:
+    commands:
+      - echo "=== Applying Terraform Changes ==="
+      - echo "Importing existing resources first..."
+      - |
+        # Import critical existing resources to avoid conflicts
+        terraform import aws_iam_role.config config-recorder-role || echo "Config role already imported or doesn't exist"
+        terraform import aws_secretsmanager_secret.app app/secret || echo "App secret already imported or doesn't exist"
+        terraform import aws_wafv2_web_acl.cloudfront cloudfront-waf || echo "CloudFront WAF already imported or doesn't exist"
+        terraform import aws_wafv2_web_acl.alb alb-waf || echo "ALB WAF already imported or doesn't exist"
+        terraform import module.athena.aws_athena_workgroup.logs ecommerce_workgroup || echo "Athena workgroup already imported or doesn't exist"
+        terraform import module.cloudwatch.aws_cloudwatch_log_group.ecs /ecs/ecommerce-ecs-dev || echo "ECS log group already imported or doesn't exist"
+        terraform import module.dms.aws_dms_replication_instance.this cross-region-dms-instance || echo "DMS instance already imported or doesn't exist"
+        terraform import module.dms.aws_dms_endpoint.source source-db-endpoint || echo "DMS source endpoint already imported or doesn't exist"
+        terraform import module.dms.aws_dms_endpoint.target target-db-endpoint || echo "DMS target endpoint already imported or doesn't exist"
+        terraform import module.ecr.aws_ecr_repository.backend ecommerce-backend-dev || echo "ECR repository already imported or doesn't exist"
+        terraform import module.rds.aws_db_subnet_group.this ecommerce-ecs-dev-db-db-subnet-group || echo "RDS subnet group already imported or doesn't exist"
+        terraform import module.rds.aws_db_parameter_group.this ecommerce-ecs-dev-db-db-parameter-group || echo "RDS parameter group already imported or doesn't exist"
+        terraform import module.rds.aws_iam_role.rds_enhanced_monitoring ecommerce-ecs-dev-db-rds-enhanced-monitoring || echo "RDS monitoring role already imported or doesn't exist"
+        terraform import module.rds.aws_secretsmanager_secret.rds_credentials ecommerce-ecs-dev-db-rds-credentials || echo "RDS credentials secret already imported or doesn't exist"
+        terraform import module.s3.aws_s3_bucket.frontend ecommerce-frontend-dev || echo "Frontend S3 bucket already imported or doesn't exist"
+        terraform import module.s3.aws_s3_bucket.alb_logs ecommerce-alb-logs-dev || echo "ALB logs S3 bucket already imported or doesn't exist"
+        terraform import module.s3.aws_s3_bucket.cloudfront_logs ecommerce-cloudfront-logs-dev || echo "CloudFront logs S3 bucket already imported or doesn't exist"
+        terraform import module.xray.aws_xray_group.default ecommerce-ecs-dev || echo "X-Ray group already imported or doesn't exist"
+        terraform import module.xray.aws_iam_role.xray ecommerce-ecs-dev-xray-role || echo "X-Ray role already imported or doesn't exist"
+        terraform import module.alb.aws_lb_target_group.api ecommerce-alb-dev-api || echo "ALB target group already imported or doesn't exist"
+        terraform import module.ecs.aws_iam_role.ecs_task_execution ecommerce-ecs-dev-ecs-task-execution || echo "ECS task execution role already imported or doesn't exist"
+        terraform import module.cicd.aws_iam_role.codepipeline ecommerce-codepipeline-role || echo "CodePipeline role already imported or doesn't exist"
+        terraform import module.cicd.aws_iam_role.codebuild ecommerce-codebuild-role || echo "CodeBuild role already imported or doesn't exist"
+        terraform import module.sns.aws_iam_role.lambda_slack_notifier[0] lambda-sns-slack-notifier-alerts || echo "SNS Lambda role already imported or doesn't exist"
+      - echo "Applying Terraform changes..."
+      - terraform apply -auto-approve
+      - echo "=== Terraform apply completed ==="
+
+  post_build:
+    commands:
+      - echo "Terraform apply completed on $(date)"
+      - echo "Infrastructure deployment summary:"
+      - terraform output -json > terraform-outputs.json || echo "Output export failed"
+      - terraform output || echo "No outputs available"
+
+artifacts:
+  files:
+    - ops/iac/terraform-outputs.json
+  name: terraform-apply-artifacts
+
+cache:
+  paths:
+    - '/root/.terraform.d/plugin-cache/**/*'

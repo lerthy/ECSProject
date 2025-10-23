@@ -1,16 +1,11 @@
 # Security Enhancements: IAM, Encryption, CloudTrail, Config, Secrets
 
-# S3 Encryption at rest
-data "aws_kms_key" "s3" {
-  key_id = "alias/aws/s3"
-}
-
+# S3 Encryption at rest - Using AES256 for CloudFront compatibility
 resource "aws_s3_bucket_server_side_encryption_configuration" "frontend" {
   bucket = module.s3.frontend_bucket_name
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm     = "aws:kms"
-      kms_master_key_id = data.aws_kms_key.s3.arn
+      sse_algorithm = "AES256"
     }
   }
 }

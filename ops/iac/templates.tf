@@ -14,7 +14,7 @@ data "template_file" "container_definition" {
     container_port              = var.container_port
     environment                 = var.environment
     node_env                    = var.environment == "prod" ? "production" : "development"
-    db_host                     = module.rds.rds_endpoint
+    db_host                     = module.rds.connection_info.host
     db_port                     = "5432"
     db_name                     = "ecommerce"
     db_username                 = "postgres"
@@ -36,7 +36,7 @@ data "template_file" "container_definition_standby" {
     container_port              = var.container_port
     environment                 = var.environment
     node_env                    = var.environment == "prod" ? "production" : "development"
-    db_host                     = module.rds_standby.rds_endpoint
+    db_host                     = module.rds_standby.connection_info.host
     db_port                     = "5432"
     db_name                     = "ecommerce"
     db_username                 = "postgres"

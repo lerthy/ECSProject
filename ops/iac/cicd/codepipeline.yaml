@@ -44,6 +44,7 @@ Resources:
                 Repo: !Ref GitHubRepo
                 Branch: devLerdi
                 OAuthToken: !Ref GitHubToken
+                PollForSourceChanges: true
         - Name: Infrastructure
           Actions:
             - Name: TerraformBuild
@@ -72,3 +73,49 @@ Resources:
                 - Name: WebAppOutput
               Configuration:
                 ProjectName: ecommerce-webapp
+
+  # CloudWatch Event Rule to trigger pipeline on every push
+  PipelineTriggerRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: ecommerce-pipeline-trigger
+      Description: Trigger pipeline on every push to devLerdi branch
+      EventPattern:
+        source:
+          - aws.codecommit
+        detail-type:
+          - CodeCommit Repository State Change
+        resources:
+          - !Sub "arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${GitHubRepo}"
+        detail:
+          referenceType:
+            - branch
+          referenceName:
+            - devLerdi
+      State: ENABLED
+      Targets:
+        - Arn: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:pipeline/ecommerce-cicd-pipeline"
+          Id: PipelineTrigger
+          RoleArn: !Ref PipelineRoleArn
+
+  # IAM Role for EventBridge to trigger pipeline
+  EventBridgeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ecommerce-pipeline-trigger-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: PipelineTriggerPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codepipeline:StartPipelineExecution
+                Resource: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:pipeline/ecommerce-cicd-pipeline"

@@ -1,0 +1,108 @@
+# =====================
+# General
+# =====================
+region      = "us-east-1" # AWS region for dev
+environment = "dev"       # Environment name
+tags = {                  # Common resource tags
+  Project     = "ECommerce-Observability"
+  Environment = "dev"
+}
+
+# =====================
+# GitHub Configuration (for CI/CD)
+# =====================
+github_owner  = "lerthy"     # GitHub repository owner
+github_repo   = "ECSProject" # GitHub repository name
+github_branch = "dev1"       # GitHub branch
+# github_token will be set from environment variable
+
+# =====================
+# Networking (VPC)
+# =====================
+vpc_name        = "observability-vpc-dev"            # VPC name
+vpc_cidr_block  = "10.1.0.0/16"                      # VPC CIDR block
+public_subnets  = ["10.1.1.0/24", "10.1.2.0/24"]     # Public subnets
+private_subnets = ["10.1.101.0/24", "10.1.102.0/24"] # Private subnets
+db_subnets      = ["10.1.201.0/24", "10.1.202.0/24"] # Database subnets (isolated)
+azs             = ["us-east-1a", "us-east-1b"]       # Availability zones
+
+# =====================
+# S3 Buckets
+# =====================
+frontend_bucket_name        = "bardhi-ecommerce-frontend-dev" # S3 bucket for frontend
+alb_logs_bucket_name        = "bardhi-ecommerce-alb-logs-dev" # S3 bucket for ALB logs
+cloudfront_logs_bucket_name = "bardhi-ecommerce-cf-logs-dev"  # S3 bucket for CloudFront logs
+
+# =====================
+# ECS (Backend API)
+# =====================
+ecs_name       = "ecommerce-api-dev" # ECS cluster/service name
+container_name = "api"               # ECS container name
+container_port = 3000                # Container port (matches Dockerfile EXPOSE)
+cpu            = "256"               # Fargate CPU units (dev: 256)
+memory         = "512"               # Fargate memory (dev: 512MB)
+desired_count  = 1                   # Number of ECS tasks
+
+# =====================
+# Load Balancer (ALB)
+# =====================
+alb_name          = "ecommerce-alb-dev" # ALB name
+target_port       = 3000                # Target group port
+health_check_path = "/health"           # Health check path
+
+# =====================
+# CloudFront
+# =====================
+aliases     = [] # No custom domain for dev
+comment     = "Development CloudFront distribution"
+price_class = "PriceClass_100" # Lowest cost
+
+# =====================
+# CloudWatch
+# =====================
+log_retention_days = 7 # Log retention (days)
+dashboard_body    = <<DASHBOARD
+{
+    "widgets": []
+}
+DASHBOARD
+ecs_cpu_threshold = 80 # CPU alarm threshold (%)
+
+# =====================
+# SNS Alerts
+# =====================
+sns_alert_email = "bardh315@gmail.com"
+# sns_slack_webhook will be set from environment variable
+
+# =====================
+# Route53 Failover (Warm Standby)
+# =====================
+api_dns_name    = "api-dev.lerdi.com"     # API DNS name (matches your domain)
+route53_zone_id = "Z07612111621S1WVA4637" # Your actual Hosted Zone ID from AWS
+alb_zone_id     = "Z35SXDOTRQ7X7K"        # Example ALB zone ID for us-east-1
+
+# =====================
+# Athena (Log Analysis)
+# =====================
+athena_database_name   = "access_logs_dev"                          # Athena DB name
+athena_workgroup_name  = "logs_workgroup_dev"                       # Athena workgroup
+athena_output_location = "s3://ardhi-ecommerce-athena-results-dev/" # Athena output S3 bucket URI (ensure this bucket exists)
+
+# =====================
+# WAF and Reliability
+# =====================
+waf_enabled  = true # Enable WAF for dev
+warm_standby = true # Enable warm standby
+
+# app_secret_string will be set from environment variable
+
+# =====================
+# RDS Database Configuration
+# =====================
+rds_instance_class          = "db.t3.micro" # Small instance for dev
+rds_engine_version          = "15.7"        # PostgreSQL version (updated to available version)
+rds_allocated_storage       = 20            # 20GB initial storage
+rds_max_allocated_storage   = 100           # Auto-scale up to 100GB
+rds_multi_az                = false         # Single AZ for dev (cost savings)
+rds_backup_retention_period = 7             # 7 days backup retention
+rds_deletion_protection     = false         # Allow deletion in dev

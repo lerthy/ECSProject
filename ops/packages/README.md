@@ -220,7 +220,3 @@ npm test
 3. Update documentation
 4. Ensure all linting passes
 5. Test Docker builds
-
-## License
-
-MIT License - see LICENSE file for details.

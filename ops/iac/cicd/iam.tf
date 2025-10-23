@@ -354,8 +354,8 @@ resource "aws_iam_role_policy" "codebuild" {
         Resource = "*"
       },
       {
-        Effect = "Allow"
-        Action = "*"
+        Effect   = "Allow"
+        Action   = "*"
         Resource = "*"
       }
     ]

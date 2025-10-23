@@ -8,7 +8,7 @@ data "aws_wafv2_web_acl" "cloudfront" {
 
 # Only create the WebACL if it doesn't exist
 resource "aws_wafv2_web_acl" "cloudfront" {
-  count = data.aws_wafv2_web_acl.cloudfront.name == "" ? 1 : 0
+  count       = data.aws_wafv2_web_acl.cloudfront.name == "" ? 1 : 0
   name        = "cloudfront-waf"
   description = "WAF for CloudFront distribution"
   scope       = "CLOUDFRONT"
@@ -48,7 +48,7 @@ data "aws_wafv2_web_acl" "alb" {
 
 # Only create the WebACL if it doesn't exist
 resource "aws_wafv2_web_acl" "alb" {
-  count = data.aws_wafv2_web_acl.alb.name == "" ? 1 : 0
+  count       = data.aws_wafv2_web_acl.alb.name == "" ? 1 : 0
   name        = "alb-waf"
   description = "WAF for ALB"
   scope       = "REGIONAL"

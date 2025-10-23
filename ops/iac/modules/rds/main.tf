@@ -41,7 +41,7 @@ data "aws_secretsmanager_secret" "rds_credentials" {
 
 # Only create the secret if it doesn't exist
 resource "aws_secretsmanager_secret" "rds_credentials" {
-  count = data.aws_secretsmanager_secret.rds_credentials.name == "" ? 1 : 0
+  count                   = data.aws_secretsmanager_secret.rds_credentials.name == "" ? 1 : 0
   name                    = "${var.name}-rds-credentials"
   description             = "RDS master credentials for ${var.name}"
   recovery_window_in_days = 0 # For dev environment
@@ -70,7 +70,7 @@ data "aws_db_parameter_group" "this" {
 
 # Only create the parameter group if it doesn't exist
 resource "aws_db_parameter_group" "this" {
-  count = data.aws_db_parameter_group.this.name == "" ? 1 : 0
+  count  = data.aws_db_parameter_group.this.name == "" ? 1 : 0
   family = "postgres15"
   name   = "${var.name}-db-parameter-group"
 
@@ -131,7 +131,7 @@ data "aws_iam_role" "rds_enhanced_monitoring" {
 # Only create the role if it doesn't exist
 resource "aws_iam_role" "rds_enhanced_monitoring" {
   count = data.aws_iam_role.rds_enhanced_monitoring.name == "" ? 1 : 0
-  name = "${var.name}-rds-enhanced-monitoring"
+  name  = "${var.name}-rds-enhanced-monitoring"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

@@ -43,7 +43,7 @@ data "aws_iam_role" "config" {
 
 # Only create the role if it doesn't exist
 resource "aws_iam_role" "config" {
-  count = data.aws_iam_role.config.name == "" ? 1 : 0
+  count              = data.aws_iam_role.config.name == "" ? 1 : 0
   name               = "config-recorder-role"
   assume_role_policy = data.aws_iam_policy_document.config_assume_role_policy.json
   tags               = var.tags
@@ -78,8 +78,8 @@ data "aws_secretsmanager_secret" "app" {
 # Only create the secret if it doesn't exist
 resource "aws_secretsmanager_secret" "app" {
   count = data.aws_secretsmanager_secret.app.name == "" ? 1 : 0
-  name = "app/secret"
-  tags = var.tags
+  name  = "app/secret"
+  tags  = var.tags
 }
 
 resource "aws_secretsmanager_secret_version" "app" {

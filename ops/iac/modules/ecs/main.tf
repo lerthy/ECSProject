@@ -20,7 +20,7 @@ data "aws_iam_role" "ecs_task_execution" {
 
 # Only create the role if it doesn't exist
 resource "aws_iam_role" "ecs_task_execution" {
-  count = data.aws_iam_role.ecs_task_execution.name == "" ? 1 : 0
+  count              = data.aws_iam_role.ecs_task_execution.name == "" ? 1 : 0
   name               = "${var.name}-ecs-task-execution"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role_policy.json
   tags               = var.tags

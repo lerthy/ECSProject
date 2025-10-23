@@ -15,7 +15,7 @@ data "aws_cloudwatch_log_group" "ecs" {
 
 # Only create the log group if it doesn't exist
 resource "aws_cloudwatch_log_group" "ecs" {
-  count = data.aws_cloudwatch_log_group.ecs.name == "" ? 1 : 0
+  count             = data.aws_cloudwatch_log_group.ecs.name == "" ? 1 : 0
   name              = "/ecs/${var.name}"
   retention_in_days = var.log_retention_days
   tags              = var.tags

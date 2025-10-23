@@ -91,7 +91,7 @@ data "aws_s3_bucket" "frontend" {
 
 # Only create the bucket if it doesn't exist
 resource "aws_s3_bucket" "frontend" {
-  count = data.aws_s3_bucket.frontend.bucket == "" ? 1 : 0
+  count         = data.aws_s3_bucket.frontend.bucket == "" ? 1 : 0
   bucket        = var.frontend_bucket_name
   force_destroy = true
   tags          = var.tags
@@ -153,7 +153,7 @@ data "aws_s3_bucket" "alb_logs" {
 
 # Only create the bucket if it doesn't exist
 resource "aws_s3_bucket" "alb_logs" {
-  count = data.aws_s3_bucket.alb_logs.bucket == "" ? 1 : 0
+  count         = data.aws_s3_bucket.alb_logs.bucket == "" ? 1 : 0
   bucket        = var.alb_logs_bucket_name
   force_destroy = true
   tags          = var.tags
@@ -240,7 +240,7 @@ data "aws_s3_bucket" "cloudfront_logs" {
 
 # Only create the bucket if it doesn't exist
 resource "aws_s3_bucket" "cloudfront_logs" {
-  count = data.aws_s3_bucket.cloudfront_logs.bucket == "" ? 1 : 0
+  count         = data.aws_s3_bucket.cloudfront_logs.bucket == "" ? 1 : 0
   bucket        = var.cloudfront_logs_bucket_name
   force_destroy = true
   tags          = var.tags

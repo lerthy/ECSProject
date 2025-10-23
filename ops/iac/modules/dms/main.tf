@@ -16,7 +16,7 @@ data "aws_iam_role" "dms_vpc_role" {
 # Only create the role if it doesn't exist
 resource "aws_iam_role" "dms_vpc_role" {
   count = data.aws_iam_role.dms_vpc_role.name == "" ? 1 : 0
-  name = "dms-vpc-role"
+  name  = "dms-vpc-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -44,7 +44,7 @@ data "aws_dms_replication_instance" "this" {
 
 # Only create the replication instance if it doesn't exist
 resource "aws_dms_replication_instance" "this" {
-  count = data.aws_dms_replication_instance.this.replication_instance_id == "" ? 1 : 0
+  count                      = data.aws_dms_replication_instance.this.replication_instance_id == "" ? 1 : 0
   replication_instance_id    = var.replication_instance_id
   allocated_storage          = var.allocated_storage
   replication_instance_class = var.replication_instance_class
@@ -63,7 +63,7 @@ data "aws_dms_endpoint" "source" {
 
 # Only create the endpoint if it doesn't exist
 resource "aws_dms_endpoint" "source" {
-  count = data.aws_dms_endpoint.source.endpoint_id == "" ? 1 : 0
+  count         = data.aws_dms_endpoint.source.endpoint_id == "" ? 1 : 0
   endpoint_id   = var.source_endpoint_id
   endpoint_type = "source"
   engine_name   = var.source_engine_name
@@ -82,7 +82,7 @@ data "aws_dms_endpoint" "target" {
 
 # Only create the endpoint if it doesn't exist
 resource "aws_dms_endpoint" "target" {
-  count = data.aws_dms_endpoint.target.endpoint_id == "" ? 1 : 0
+  count         = data.aws_dms_endpoint.target.endpoint_id == "" ? 1 : 0
   endpoint_id   = var.target_endpoint_id
   endpoint_type = "target"
   engine_name   = var.target_engine_name

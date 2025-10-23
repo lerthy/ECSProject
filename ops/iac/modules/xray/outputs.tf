@@ -5,5 +5,5 @@ output "xray_group_name" {
 
 output "xray_role_arn" {
   description = "IAM role ARN for X-Ray"
-  value       = aws_iam_role.xray.arn
+  value       = data.aws_iam_role.xray.arn
 }

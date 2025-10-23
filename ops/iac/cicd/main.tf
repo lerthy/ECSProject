@@ -59,7 +59,7 @@ resource "random_string" "suffix" {
 resource "aws_codebuild_project" "terraform" {
   name         = "ecommerce-terraform"
   description  = "Terraform infrastructure build project"
-  service_role = aws_iam_role.codebuild.arn
+  service_role = data.aws_iam_role.codebuild.arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -99,7 +99,7 @@ resource "aws_codebuild_project" "terraform" {
 resource "aws_codebuild_project" "security_scan" {
   name         = "ecommerce-security-scan"
   description  = "Security scanning for infrastructure code"
-  service_role = aws_iam_role.codebuild.arn
+  service_role = data.aws_iam_role.codebuild.arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -123,7 +123,7 @@ resource "aws_codebuild_project" "security_scan" {
 resource "aws_codebuild_project" "frontend" {
   name         = "ecommerce-frontend"
   description  = "Frontend web application build and deploy project"
-  service_role = aws_iam_role.codebuild.arn
+  service_role = data.aws_iam_role.codebuild.arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -162,7 +162,7 @@ resource "aws_codebuild_project" "frontend" {
 resource "aws_codebuild_project" "backend" {
   name         = "ecommerce-backend"
   description  = "Backend API build and deploy project"
-  service_role = aws_iam_role.codebuild.arn
+  service_role = data.aws_iam_role.codebuild.arn
 
   artifacts {
     type = "CODEPIPELINE"

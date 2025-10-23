@@ -16,7 +16,7 @@ data "aws_vpc" "this" {
 }
 
 resource "aws_internet_gateway" "this" {
-  vpc_id = data.data.aws_vpc.this.id
+  vpc_id = data.aws_vpc.this.id
   tags   = merge(var.tags, { Name = "${var.name}-igw" })
 }
 

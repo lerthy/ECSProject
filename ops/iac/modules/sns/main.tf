@@ -35,7 +35,7 @@ resource "aws_lambda_permission" "allow_sns" {
   count         = var.slack_webhook != "" ? 1 : 0
   statement_id  = "AllowExecutionFromSNS"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.slack_notifier[0].function_name
+  function_name = data.aws_lambda_function.slack_notifier[0].function_name
   principal     = "sns.amazonaws.com"
   source_arn    = var.create_topic ? aws_sns_topic.alerts[0].arn : data.aws_sns_topic.alerts[0].arn
 }

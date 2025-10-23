@@ -35,7 +35,7 @@ resource "aws_iam_role_policy" "replication_policy" {
           "s3:GetReplicationConfiguration",
           "s3:ListBucket"
         ]
-        Resource = [aws_s3_bucket.frontend.arn]
+        Resource = [data.aws_s3_bucket.frontend.arn]
       },
       {
         Effect = "Allow"
@@ -43,7 +43,7 @@ resource "aws_iam_role_policy" "replication_policy" {
           "s3:GetObjectVersion",
           "s3:GetObjectVersionAcl"
         ]
-        Resource = ["${aws_s3_bucket.frontend.arn}/*"]
+        Resource = ["${data.aws_s3_bucket.frontend.arn}/*"]
       },
       {
         Effect = "Allow"
@@ -60,7 +60,7 @@ resource "aws_iam_role_policy" "replication_policy" {
 
 resource "aws_s3_bucket_replication_configuration" "frontend" {
   count  = var.enable_replication ? 1 : 0
-  bucket = aws_s3_bucket.frontend.id
+  bucket = data.aws_s3_bucket.frontend.id
   role   = aws_iam_role.replication[0].arn
 
   rule {

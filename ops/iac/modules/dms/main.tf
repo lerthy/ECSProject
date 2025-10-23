@@ -114,7 +114,7 @@ resource "aws_cloudwatch_metric_alarm" "dms_task_failed" {
   ok_actions          = var.alarm_actions
 
   dimensions = {
-    ReplicationTaskIdentifier = aws_dms_replication_task.this.replication_task_id
+    ReplicationTaskIdentifier = data.aws_dms_replication_task.this.replication_task_id
   }
 
   tags = var.tags
@@ -134,7 +134,7 @@ resource "aws_cloudwatch_metric_alarm" "dms_task_stopped" {
   ok_actions          = var.alarm_actions
 
   dimensions = {
-    ReplicationTaskIdentifier = aws_dms_replication_task.this.replication_task_id
+    ReplicationTaskIdentifier = data.aws_dms_replication_task.this.replication_task_id
   }
 
   tags = var.tags
@@ -154,7 +154,7 @@ resource "aws_cloudwatch_metric_alarm" "dms_cdc_latency" {
   ok_actions          = var.alarm_actions
 
   dimensions = {
-    ReplicationTaskIdentifier = aws_dms_replication_task.this.replication_task_id
+    ReplicationTaskIdentifier = data.aws_dms_replication_task.this.replication_task_id
   }
 
   tags = var.tags

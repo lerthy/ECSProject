@@ -15,12 +15,28 @@ resource "aws_xray_group" "default" {
     insights_enabled = true
   }
   tags = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      group_name,
+      tags
+    ]
+  }
 }
 
 resource "aws_iam_role" "xray" {
   name               = "${var.name}-xray-role"
   assume_role_policy = data.aws_iam_policy_document.xray_assume_role_policy.json
   tags               = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      name,
+      tags
+    ]
+  }
 }
 
 data "aws_iam_policy_document" "xray_assume_role_policy" {

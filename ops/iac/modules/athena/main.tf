@@ -371,6 +371,7 @@ resource "aws_athena_workgroup" "logs" {
     prevent_destroy = true
     ignore_changes = [
       name,
+      tags,
       configuration
     ]
   }

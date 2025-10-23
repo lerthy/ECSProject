@@ -13,6 +13,14 @@ resource "aws_lambda_function" "slack_notifier" {
     }
   }
   tags = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      function_name,
+      tags
+    ]
+  }
 }
 
 # Use data source for existing Lambda Slack notifier role

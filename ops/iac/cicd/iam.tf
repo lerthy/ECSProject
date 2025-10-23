@@ -4,6 +4,13 @@
 resource "aws_iam_role" "codepipeline" {
   name = "ecommerce-codepipeline-role"
 
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      name
+    ]
+  }
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -86,6 +93,13 @@ resource "aws_iam_role_policy" "codepipeline" {
 # CodeBuild service role
 resource "aws_iam_role" "codebuild" {
   name = "ecommerce-codebuild-role"
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      name
+    ]
+  }
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

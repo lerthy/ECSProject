@@ -103,6 +103,14 @@ resource "aws_dms_replication_task" "this" {
   table_mappings            = file("${path.module}/table-mappings.json")
   replication_task_settings = file("${path.module}/task-settings.json")
   tags                      = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      replication_task_id,
+      tags
+    ]
+  }
 }
 
 # CloudWatch Alarms for DMS monitoring

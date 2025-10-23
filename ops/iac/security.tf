@@ -84,5 +84,5 @@ resource "aws_secretsmanager_secret" "app" {
 
 resource "aws_secretsmanager_secret_version" "app" {
   secret_id     = data.aws_secretsmanager_secret.app.id
-  secret_string = var.app_secret_string
+  secret_string = var.app_secret_string != "" ? var.app_secret_string : "default-secret-value"
 }

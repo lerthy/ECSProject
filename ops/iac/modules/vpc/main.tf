@@ -13,6 +13,14 @@ resource "aws_vpc" "this" {
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags                 = merge(var.tags, { Name = "${var.name}-vpc" })
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      cidr_block,
+      tags
+    ]
+  }
 }
 
 resource "aws_internet_gateway" "this" {

@@ -11,7 +11,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_latency" {
   statistic           = "Average"
   threshold           = var.alb_latency_threshold
   dimensions = {
-    LoadBalancer = var.alb_arn
+    LoadBalancer = var.alb_arn_suffix
   }
   alarm_description = "ALB latency exceeds threshold"
   alarm_actions     = [var.sns_topic_arn]
@@ -29,7 +29,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
   statistic           = "Sum"
   threshold           = var.alb_5xx_threshold
   dimensions = {
-    LoadBalancer = var.alb_arn
+    LoadBalancer = var.alb_arn_suffix
   }
   alarm_description = "ALB 5xx errors exceed threshold"
   alarm_actions     = [var.sns_topic_arn]

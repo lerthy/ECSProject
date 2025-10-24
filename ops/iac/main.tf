@@ -187,7 +187,7 @@ module "cloudwatch" {
   tags                       = var.tags
   dashboard_body             = var.dashboard_body
   ecs_cpu_threshold          = var.ecs_cpu_threshold
-  ecs_cluster_name           = module.ecs.cluster_id
+  ecs_cluster_name           = module.ecs.cluster_name
   sns_topic_arn              = module.sns.sns_topic_arn
   alb_name                   = var.alb_name
   environment                = var.environment
@@ -224,6 +224,7 @@ module "monitoring_alarms" {
   source                     = "./modules/monitoring_alarms"
   alb_name                   = var.alb_name
   alb_arn                    = module.alb.alb_arn
+  alb_arn_suffix             = module.alb.alb_arn_suffix
   sns_topic_arn              = module.sns.sns_topic_arn
   cloudfront_distribution_id = module.cloudfront.cloudfront_distribution_id
   environment                = var.environment

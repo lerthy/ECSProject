@@ -15,7 +15,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
   threshold           = var.ecs_cpu_threshold
   alarm_description   = "ECS CPU usage is high"
   dimensions = {
-    ClusterName = module.ecs.cluster_id
+    ClusterName = module.ecs.cluster_name
     ServiceName = module.ecs.service_name
   }
   alarm_actions = [module.sns.sns_topic_arn]

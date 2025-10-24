@@ -17,6 +17,11 @@ variable "alb_arn" {
   type        = string
 }
 
+variable "alb_arn_suffix" {
+  description = "ARN suffix of the ALB for CloudWatch metrics"
+  type        = string
+}
+
 variable "sns_topic_arn" {
   description = "SNS topic ARN for alarm notifications"
   type        = string

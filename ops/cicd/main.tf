@@ -78,7 +78,7 @@ resource "aws_codebuild_project" "terraform" {
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = "ops/cicd/buildspec-terraform.yml"
+    buildspec = "ops/iac/buildspec-terraform.yml"
   }
 
   tags = var.tags
@@ -117,7 +117,7 @@ resource "aws_codebuild_project" "frontend" {
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = "ops/cicd/buildspec-frontend.yml"
+    buildspec = "packages/web/buildspec-frontend.yml"
   }
 
   tags = var.tags
@@ -172,7 +172,7 @@ resource "aws_codebuild_project" "backend" {
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = "ops/cicd/buildspec-backend.yml"
+    buildspec = "packages/api/buildspec-backend.yml"
   }
 
   tags = var.tags

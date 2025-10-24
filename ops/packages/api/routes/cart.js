@@ -50,19 +50,19 @@ function useSubsegment(subsegment, action) {
     return (...args) => null; // No-op function that accepts any arguments
 }
 
-// Helper function to get or create cart for user
-async function getOrCreateCart(userId) {
+// Helper function to get or create cart for session
+async function getOrCreateCart(sessionId) {
     // Check if cart exists
     let result = await dbConnection.query(
         'SELECT id FROM carts WHERE user_id = $1',
-        [userId]
+        [sessionId]
     );
 
     if (result.rows.length === 0) {
         // Create new cart
         result = await dbConnection.query(
             'INSERT INTO carts (user_id) VALUES ($1) RETURNING id',
-            [userId]
+            [sessionId]
         );
     }
 
@@ -104,15 +104,15 @@ const updateItemSchema = Joi.object({
     quantity: Joi.number().integer().min(1).required()
 });
 
-// GET /api/cart/:userId - Get user's cart
-router.get('/:userId', async (req, res) => {
+// GET /api/cart/:sessionId - Get session's cart
+router.get('/:sessionId', async (req, res) => {
     const subsegment = createSubsegment('get-cart');
 
     try {
-        const { userId } = req.params;
+        const { sessionId } = req.params;
 
         // Get or create cart
-        const cartId = await getOrCreateCart(userId);
+        const cartId = await getOrCreateCart(sessionId);
 
         // Get cart items with product details
         const itemsResult = await dbConnection.query(`
@@ -134,13 +134,13 @@ router.get('/:userId', async (req, res) => {
         const items = itemsResult.rows;
         const totals = await calculateCartTotals(cartId);
 
-        useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
+        useSubsegment(subsegment, 'addAnnotation')('session_id', sessionId);
         useSubsegment(subsegment, 'addAnnotation')('cart_items_count', items.length);
         useSubsegment(subsegment, 'close')();
 
         res.json({
             data: {
-                userId,
+                sessionId,
                 items,
                 ...totals,
                 createdAt: new Date().toISOString(),
@@ -155,12 +155,12 @@ router.get('/:userId', async (req, res) => {
     }
 });
 
-// POST /api/cart/:userId/items - Add item to cart
-router.post('/:userId/items', async (req, res) => {
+// POST /api/cart/:sessionId/items - Add item to cart
+router.post('/:sessionId/items', async (req, res) => {
     const subsegment = createSubsegment('add-cart-item');
 
     try {
-        const { userId } = req.params;
+        const { sessionId } = req.params;
         const { error, value } = addItemSchema.validate(req.body);
 
         if (error) {
@@ -200,7 +200,7 @@ router.post('/:userId/items', async (req, res) => {
         }
 
         // Get or create cart
-        const cartId = await getOrCreateCart(userId);
+        const cartId = await getOrCreateCart(sessionId);
 
         // Check if item already exists in cart
         const existingItemResult = await dbConnection.query(
@@ -245,7 +245,7 @@ router.post('/:userId/items', async (req, res) => {
         const items = itemsResult.rows;
         const totals = await calculateCartTotals(cartId);
 
-        useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
+        useSubsegment(subsegment, 'addAnnotation')('session_id', sessionId);
         useSubsegment(subsegment, 'addAnnotation')('product_id', productId);
         useSubsegment(subsegment, 'addAnnotation')('item_added', true);
         useSubsegment(subsegment, 'close')();
@@ -253,7 +253,7 @@ router.post('/:userId/items', async (req, res) => {
         res.status(201).json({
             message: 'Item added to cart successfully',
             data: {
-                userId,
+                sessionId,
                 items,
                 ...totals
             }
@@ -266,12 +266,12 @@ router.post('/:userId/items', async (req, res) => {
     }
 });
 
-// PUT /api/cart/:userId/items/:itemId - Update cart item quantity
-router.put('/:userId/items/:itemId', async (req, res) => {
+// PUT /api/cart/:sessionId/items/:itemId - Update cart item quantity
+router.put('/:sessionId/items/:itemId', async (req, res) => {
     const subsegment = createSubsegment('update-cart-item');
 
     try {
-        const { userId, itemId } = req.params;
+        const { sessionId, itemId } = req.params;
         const { error, value } = updateItemSchema.validate(req.body);
 
         if (error) {
@@ -288,7 +288,7 @@ router.put('/:userId/items/:itemId', async (req, res) => {
         // Get cart ID
         const cartResult = await dbConnection.query(
             'SELECT id FROM carts WHERE user_id = $1',
-            [userId]
+            [sessionId]
         );
 
         if (cartResult.rows.length === 0) {
@@ -363,7 +363,7 @@ router.put('/:userId/items/:itemId', async (req, res) => {
         const items = itemsResult.rows;
         const totals = await calculateCartTotals(cartId);
 
-        useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
+        useSubsegment(subsegment, 'addAnnotation')('session_id', sessionId);
         useSubsegment(subsegment, 'addAnnotation')('item_id', itemId);
         useSubsegment(subsegment, 'addAnnotation')('item_updated', true);
         useSubsegment(subsegment, 'close')();
@@ -371,7 +371,7 @@ router.put('/:userId/items/:itemId', async (req, res) => {
         res.json({
             message: 'Cart item updated successfully',
             data: {
-                userId,
+                sessionId,
                 items,
                 ...totals
             }
@@ -384,17 +384,17 @@ router.put('/:userId/items/:itemId', async (req, res) => {
     }
 });
 
-// DELETE /api/cart/:userId/items/:itemId - Remove item from cart
-router.delete('/:userId/items/:itemId', async (req, res) => {
+// DELETE /api/cart/:sessionId/items/:itemId - Remove item from cart
+router.delete('/:sessionId/items/:itemId', async (req, res) => {
     const subsegment = createSubsegment('remove-cart-item');
 
     try {
-        const { userId, itemId } = req.params;
+        const { sessionId, itemId } = req.params;
 
         // Get cart ID
         const cartResult = await dbConnection.query(
             'SELECT id FROM carts WHERE user_id = $1',
-            [userId]
+            [sessionId]
         );
 
         if (cartResult.rows.length === 0) {
@@ -437,7 +437,7 @@ router.delete('/:userId/items/:itemId', async (req, res) => {
         const items = itemsResult.rows;
         const totals = await calculateCartTotals(cartId);
 
-        useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
+        useSubsegment(subsegment, 'addAnnotation')('session_id', sessionId);
         useSubsegment(subsegment, 'addAnnotation')('item_id', itemId);
         useSubsegment(subsegment, 'addAnnotation')('item_removed', true);
         useSubsegment(subsegment, 'close')();
@@ -445,7 +445,7 @@ router.delete('/:userId/items/:itemId', async (req, res) => {
         res.json({
             message: 'Item removed from cart successfully',
             data: {
-                userId,
+                sessionId,
                 items,
                 ...totals
             }
@@ -458,17 +458,17 @@ router.delete('/:userId/items/:itemId', async (req, res) => {
     }
 });
 
-// DELETE /api/cart/:userId - Clear entire cart
-router.delete('/:userId', async (req, res) => {
+// DELETE /api/cart/:sessionId - Clear entire cart
+router.delete('/:sessionId', async (req, res) => {
     const subsegment = createSubsegment('clear-cart');
 
     try {
-        const { userId } = req.params;
+        const { sessionId } = req.params;
 
         // Get cart ID
         const cartResult = await dbConnection.query(
             'SELECT id FROM carts WHERE user_id = $1',
-            [userId]
+            [sessionId]
         );
 
         if (cartResult.rows.length === 0) {
@@ -493,14 +493,14 @@ router.delete('/:userId', async (req, res) => {
 
         const totals = await calculateCartTotals(cartId);
 
-        useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
+        useSubsegment(subsegment, 'addAnnotation')('session_id', sessionId);
         useSubsegment(subsegment, 'addAnnotation')('cart_cleared', true);
         useSubsegment(subsegment, 'close')();
 
         res.json({
             message: 'Cart cleared successfully',
             data: {
-                userId,
+                sessionId,
                 items: [],
                 ...totals
             }

@@ -3,13 +3,22 @@ class ECommerceApp {
     constructor() {
         // API URL configuration - use CloudFront domain for HTTPS support
         this.baseURL = window.API_URL || 'https://d2twq0ejn0l6d2.cloudfront.net/api';
-        this.currentUserId = 'user123'; // In production, this would come from authentication
+        this.sessionId = this.getOrCreateSessionId(); // Use session-based cart instead of user
         this.currentPage = 'products';
         this.cart = { items: [], total: 0 };
         this.products = [];
-        this.orders = [];
 
         this.init();
+    }
+
+    // Generate or get session ID for anonymous cart
+    getOrCreateSessionId() {
+        let sessionId = localStorage.getItem('ecommerce_session_id');
+        if (!sessionId) {
+            sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('ecommerce_session_id', sessionId);
+        }
+        return sessionId;
     }
 
     init() {
@@ -106,9 +115,6 @@ class ECommerceApp {
                 break;
             case 'cart':
                 this.loadCart();
-                break;
-            case 'orders':
-                this.loadOrders();
                 break;
         }
     }
@@ -279,7 +285,7 @@ class ECommerceApp {
         empty.style.display = 'none';
 
         try {
-            const response = await this.apiCall(`/cart/${this.currentUserId}`);
+            const response = await this.apiCall(`/cart/${this.sessionId}`);
             this.cart = response.data;
 
             if (this.cart.items.length === 0) {
@@ -359,7 +365,7 @@ class ECommerceApp {
 
     async addToCart(productId, productName, price) {
         try {
-            await this.apiCall(`/cart/${this.currentUserId}/items`, 'POST', {
+            await this.apiCall(`/cart/${this.sessionId}/items`, 'POST', {
                 productId,
                 quantity: 1,
                 price
@@ -383,7 +389,7 @@ class ECommerceApp {
         }
 
         try {
-            await this.apiCall(`/cart/${this.currentUserId}/items/${itemId}`, 'PUT', {
+            await this.apiCall(`/cart/${this.sessionId}/items/${itemId}`, 'PUT', {
                 quantity: parseInt(quantity)
             });
 
@@ -395,7 +401,7 @@ class ECommerceApp {
 
     async removeFromCart(itemId) {
         try {
-            await this.apiCall(`/cart/${this.currentUserId}/items/${itemId}`, 'DELETE');
+            await this.apiCall(`/cart/${this.sessionId}/items/${itemId}`, 'DELETE');
             this.showToast('Item removed from cart', 'info');
             this.loadCart();
         } catch (error) {
@@ -463,70 +469,19 @@ class ECommerceApp {
         }
 
         try {
-            await this.apiCall(`/checkout/${this.currentUserId}`, 'POST', checkoutData);
+            await this.apiCall(`/checkout/${this.sessionId}`, 'POST', checkoutData);
 
             this.showToast('Order placed successfully!', 'success');
             document.getElementById('checkout-modal').classList.remove('active');
 
-            // Clear cart and navigate to orders
+            // Clear cart and navigate to products
             this.cart = { items: [], total: 0 };
             this.updateCartCount();
-            this.navigateToPage('orders');
+            this.navigateToPage('products');
 
         } catch (error) {
             this.showToast('Checkout failed. Please try again.', 'error');
         }
-    }
-
-    // Orders
-    async loadOrders() {
-        const loading = document.getElementById('orders-loading');
-        const list = document.getElementById('orders-list');
-        const empty = document.getElementById('empty-orders');
-
-        loading.style.display = 'block';
-        list.innerHTML = '';
-        empty.style.display = 'none';
-
-        try {
-            const response = await this.apiCall(`/orders/${this.currentUserId}`);
-            this.orders = response.data;
-
-            if (this.orders.length === 0) {
-                empty.style.display = 'block';
-            } else {
-                this.renderOrders();
-            }
-        } catch (error) {
-            empty.style.display = 'block';
-        } finally {
-            loading.style.display = 'none';
-        }
-    }
-
-    renderOrders() {
-        const list = document.getElementById('orders-list');
-
-        list.innerHTML = this.orders.map(order => `
-            <div class="order-card">
-                <div class="order-header">
-                    <div class="order-id">Order #${order.id.slice(0, 8)}</div>
-                    <div class="order-status status-${order.status}">${order.status}</div>
-                </div>
-                <div class="order-items">
-                    ${order.items.map(item => `
-                        <div class="order-item">
-                            <span>${item.productName || `Product ${item.productId}`} × ${item.quantity}</span>
-                            <span>$${(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
-                        </div>
-                    `).join('')}
-                </div>
-                <div class="order-total">Total: $${order.totals?.total?.toFixed(2) || parseFloat(order.total || 0).toFixed(2)}</div>
-                <div style="margin-top: 1rem; font-size: 0.9rem; color: #6c757d;">
-                    Ordered on ${new Date(order.createdAt).toLocaleDateString()}
-                </div>
-            </div>
-        `).join('');
     }
 
     // Utility Methods

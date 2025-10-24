@@ -128,12 +128,12 @@ function processPayment() {
     });
 }
 
-// POST /api/checkout/:userId - Process checkout
-router.post('/:userId', async (req, res) => {
+// POST /api/checkout/:sessionId - Process checkout
+router.post('/:sessionId', async (req, res) => {
     const subsegment = createSubsegment('process-checkout');
 
     try {
-        const { userId } = req.params;
+        const { sessionId } = req.params;
         const { error, value } = checkoutSchema.validate(req.body);
 
         if (error) {
@@ -147,10 +147,10 @@ router.post('/:userId', async (req, res) => {
 
         const { shippingAddress, paymentMethod } = value;
 
-        // Get user's cart from database
+        // Get session's cart from database
         const cartResult = await dbConnection.query(
             'SELECT id FROM carts WHERE user_id = $1',
-            [userId]
+            [sessionId]
         );
 
         if (cartResult.rows.length === 0) {
@@ -221,7 +221,7 @@ router.post('/:userId', async (req, res) => {
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING id, created_at
             `, [
-                userId,
+                sessionId,
                 'confirmed',
                 totals.subtotal,
                 totals.tax,
@@ -269,7 +269,7 @@ router.post('/:userId', async (req, res) => {
             message: 'Order placed successfully',
             data: {
                 orderId: 'Will be returned from transaction',
-                userId,
+                sessionId,
                 status: 'confirmed',
                 totals,
                 estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -284,19 +284,19 @@ router.post('/:userId', async (req, res) => {
     }
 });
 
-// GET /api/orders/:userId - Get user's orders
-router.get('/:userId', async (req, res) => {
-    const subsegment = createSubsegment('get-user-orders');
+// GET /api/orders/:sessionId - Get session's orders
+router.get('/:sessionId', async (req, res) => {
+    const subsegment = createSubsegment('get-session-orders');
 
     try {
-        const { userId } = req.params;
+        const { sessionId } = req.params;
         const { limit = 10, offset = 0, status } = req.query;
 
         // Build query
         let queryText = `
             SELECT 
                 o.id,
-                o.user_id as "userId",
+                o.user_id as "sessionId",
                 o.status,
                 o.subtotal,
                 o.tax,
@@ -309,7 +309,7 @@ router.get('/:userId', async (req, res) => {
             WHERE o.user_id = $1
         `;
 
-        const queryParams = [userId];
+        const queryParams = [sessionId];
         let paramCount = 2;
 
         if (status) {
@@ -353,7 +353,7 @@ router.get('/:userId', async (req, res) => {
 
         // Get total count for pagination
         let countQuery = 'SELECT COUNT(*) as total FROM orders WHERE user_id = $1';
-        const countParams = [userId];
+        const countParams = [sessionId];
 
         if (status) {
             countQuery += ' AND status = $2';
@@ -363,7 +363,7 @@ router.get('/:userId', async (req, res) => {
         const countResult = await dbConnection.query(countQuery, countParams);
         const totalCount = parseInt(countResult.rows[0].total);
 
-        useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
+        useSubsegment(subsegment, 'addAnnotation')('session_id', sessionId);
         useSubsegment(subsegment, 'addAnnotation')('orders_count', ordersWithItems.length);
         useSubsegment(subsegment, 'close')();
 

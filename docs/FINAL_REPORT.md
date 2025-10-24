@@ -12,7 +12,7 @@ This E-Commerce Observability Platform leverages AWS services and Terraform for 
 
 ### Architecture Diagram
 
-![Architecture Diagram Placeholder](ARCHITECTURE_DIAGRAM.png)
+![Architecture Diagram Placeholder](images/ARCHITECTURE_DIAGRAM.png)
 
 ---
 
@@ -77,7 +77,7 @@ The project implements a **multi-layered monitoring architecture** across:
 - **Cache Hit Ratio**: `cloudfront-cache-hit-ratio-dev` (Minimum: 80%)
 - **Purpose**: Ensures optimal CDN performance
 
-**Metrics Tracked:**
+**Metrics Tracked:**s
 - CacheHitRate, Requests, BytesDownloaded, 4xxErrorRate, 5xxErrorRate
 
 #### 🗄️ RDS Database Monitoring
@@ -131,37 +131,13 @@ The project implements a **multi-layered monitoring architecture** across:
 - **Email**: bardh315@gmail.com (confirmed subscription)
 - **Slack**: Configurable via webhook environment variable
 
-### 4.7 CloudWatch Dashboards
-
-#### 🎯 Main Observability Dashboard: `ecommerce-observability-dashboard`
-**Widgets Include:**
-1. **ECS Service Metrics**: CPU/Memory utilization
-2. **ALB Performance**: Latency, request count, error rates
-3. **RDS Database Metrics**: CPU, connections, storage
-4. **CloudFront CDN Metrics**: Requests, cache hit ratio, errors
-
-### 4.8 Auto-Scaling Integration
-
-#### 📈 Dynamic Scaling Based on Metrics
-- **ECS CPU-based scaling**: Scale up/down based on CPU utilization
-- **ECS Memory-based scaling**: Scale up/down based on memory usage
-- **ALB Target tracking**: Automatically adjust ECS tasks based on ALB metrics
-
-### 4.9 Data Retention Policies
-
-#### 📅 Retention Configuration
-- **CloudWatch Logs**: 7 days (configurable via log_retention_days)
-- **Metrics**: 15 months (AWS default)
-- **Alarms History**: 30 days
-- **Dashboard Data**: Real-time + historical views
-
 ### Evidence Screenshots
 
 #### CloudWatch Dashboard Screenshot
-![CloudWatch Dashboard Placeholder](CLOUDWATCH_DASHBOARD.png)
+![CloudWatch Dashboard Placeholder](images/CLOUDWATCH_DASHBOARD.png)
 
 #### SNS Alarm Evidence
-![SNS Alarm Placeholder](SNS_ALARM.png)
+![SNS Alarm Placeholder](images/SNS_ALARM.png)
 
 ---
 

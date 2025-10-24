@@ -14,6 +14,7 @@ class ECommerceApp {
 
     init() {
         this.setupEventListeners();
+        this.loadCategories();
         this.loadProducts();
         this.loadCart();
         this.setupNavigation();
@@ -141,6 +142,27 @@ class ECommerceApp {
         }
     }
 
+    // Categories
+    async loadCategories() {
+        try {
+            const response = await this.apiCall('/products/categories');
+            const categories = response.data;
+
+            // Update category filter dropdown
+            const categoryFilter = document.getElementById('category-filter');
+            categoryFilter.innerHTML = '<option value="">All Categories</option>';
+
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.name;
+                option.textContent = `${category.name} (${category.productCount})`;
+                categoryFilter.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Failed to load categories:', error);
+        }
+    }
+
     // Products
     async loadProducts() {
         const loading = document.getElementById('products-loading');
@@ -186,18 +208,22 @@ class ECommerceApp {
         grid.innerHTML = products.map(product => `
             <div class="product-card" onclick="app.showProductDetail('${product.id}')">
                 <div class="product-image">
-                    <i class="fas fa-box"></i>
+                    ${product.imageUrl ? `<img src="${product.imageUrl}" alt="${product.name}" />` : '<i class="fas fa-box"></i>'}
                 </div>
-                <div class="product-category">${product.category}</div>
+                <div class="product-category">${product.category || 'Uncategorized'}</div>
                 <div class="product-name">${product.name}</div>
                 <div class="product-description">${product.description}</div>
-                <div class="product-price">$${product.price.toFixed(2)}</div>
+                <div class="product-price">$${parseFloat(product.price).toFixed(2)}</div>
                 <div class="product-stock ${product.stock < 10 ? 'stock-low' : ''}">
                     ${product.stock} in stock
                 </div>
+                <div class="product-sku" style="font-size: 0.8rem; color: #666; margin-top: 0.5rem;">
+                    SKU: ${product.sku || 'N/A'}
+                </div>
                 <button class="btn btn-primary btn-small" 
-                        onclick="event.stopPropagation(); app.addToCart('${product.id}', '${product.name}', ${product.price})">
-                    <i class="fas fa-cart-plus"></i> Add to Cart
+                        onclick="event.stopPropagation(); app.addToCart('${product.id}', '${product.name}', ${product.price})"
+                        ${product.stock === 0 ? 'disabled' : ''}>
+                    <i class="fas fa-cart-plus"></i> ${product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                 </button>
             </div>
         `).join('');
@@ -213,19 +239,23 @@ class ECommerceApp {
         detail.innerHTML = `
             <div class="product-detail-content">
                 <div class="product-image" style="height: 300px; margin-bottom: 2rem;">
-                    <i class="fas fa-box"></i>
+                    ${product.imageUrl ? `<img src="${product.imageUrl}" alt="${product.name}" style="max-width: 100%; height: 100%; object-fit: contain;" />` : '<i class="fas fa-box"></i>'}
                 </div>
-                <div class="product-category">${product.category}</div>
+                <div class="product-category">${product.category || 'Uncategorized'}</div>
                 <h2>${product.name}</h2>
                 <p class="product-description">${product.description}</p>
-                <div class="product-price">$${product.price.toFixed(2)}</div>
+                <div class="product-price">$${parseFloat(product.price).toFixed(2)}</div>
                 <div class="product-stock ${product.stock < 10 ? 'stock-low' : ''}">
                     ${product.stock} in stock
                 </div>
+                <div class="product-sku" style="margin: 1rem 0; font-size: 0.9rem; color: #666;">
+                    SKU: ${product.sku || 'N/A'}
+                </div>
                 <div style="margin-top: 2rem;">
                     <button class="btn btn-primary" 
-                            onclick="app.addToCart('${product.id}', '${product.name}', ${product.price}); document.getElementById('product-modal').classList.remove('active');">
-                        <i class="fas fa-cart-plus"></i> Add to Cart
+                            onclick="app.addToCart('${product.id}', '${product.name}', ${product.price}); document.getElementById('product-modal').classList.remove('active');"
+                            ${product.stock === 0 ? 'disabled' : ''}>
+                        <i class="fas fa-cart-plus"></i> ${product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                     </button>
                 </div>
             </div>
@@ -278,8 +308,8 @@ class ECommerceApp {
                     <i class="fas fa-box"></i>
                 </div>
                 <div class="cart-item-details">
-                    <div class="cart-item-name">Product ${item.productId}</div>
-                    <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+                    <div class="cart-item-name">${item.productName || `Product ${item.productId}`}</div>
+                    <div class="cart-item-price">$${parseFloat(item.price).toFixed(2)}</div>
                     <div class="cart-item-controls">
                         <button class="btn btn-small btn-secondary" 
                                 onclick="app.updateCartItemQuantity('${item.id}', ${item.quantity - 1})">
@@ -314,7 +344,7 @@ class ECommerceApp {
             </div>
             <div class="summary-row">
                 <span>Shipping:</span>
-                <span>${this.cart.subtotal > 50 ? 'FREE' : '$9.99'}</span>
+                <span>${this.cart.shipping === 0 ? 'FREE' : `$${this.cart.shipping?.toFixed(2) || '9.99'}`}</span>
             </div>
             <div class="summary-row total">
                 <span>Total:</span>
@@ -376,7 +406,7 @@ class ECommerceApp {
     updateCartCount() {
         // Update cart count in navigation
         const cartCount = document.querySelector('.cart-count');
-        const totalItems = this.cart.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+        const totalItems = this.cart.itemCount || this.cart.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
         cartCount.textContent = totalItems;
     }
 
@@ -486,12 +516,12 @@ class ECommerceApp {
                 <div class="order-items">
                     ${order.items.map(item => `
                         <div class="order-item">
-                            <span>Product ${item.productId} × ${item.quantity}</span>
-                            <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                            <span>${item.productName || `Product ${item.productId}`} × ${item.quantity}</span>
+                            <span>$${(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
                         </div>
                     `).join('')}
                 </div>
-                <div class="order-total">Total: $${order.totals.total.toFixed(2)}</div>
+                <div class="order-total">Total: $${order.totals?.total?.toFixed(2) || parseFloat(order.total || 0).toFixed(2)}</div>
                 <div style="margin-top: 1rem; font-size: 0.9rem; color: #6c757d;">
                     Ordered on ${new Date(order.createdAt).toLocaleDateString()}
                 </div>

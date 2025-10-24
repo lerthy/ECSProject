@@ -302,6 +302,75 @@ router.post('/create-tables', async (req, res) => {
         `);
         console.log('✅ Products table created');
 
+        // Create users table
+        await dbConnection.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                email VARCHAR(255) UNIQUE NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Users table created');
+
+        // Create carts table
+        await dbConnection.query(`
+            CREATE TABLE IF NOT EXISTS carts (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                user_id VARCHAR(255) NOT NULL, -- For now using string user IDs
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Carts table created');
+
+        // Create cart_items table
+        await dbConnection.query(`
+            CREATE TABLE IF NOT EXISTS cart_items (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                cart_id UUID REFERENCES carts(id) ON DELETE CASCADE,
+                product_id UUID REFERENCES products(id),
+                quantity INTEGER NOT NULL CHECK (quantity > 0),
+                price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(cart_id, product_id)
+            )
+        `);
+        console.log('✅ Cart items table created');
+
+        // Create orders table
+        await dbConnection.query(`
+            CREATE TABLE IF NOT EXISTS orders (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                user_id VARCHAR(255) NOT NULL,
+                status VARCHAR(50) NOT NULL DEFAULT 'pending',
+                subtotal DECIMAL(10,2) NOT NULL,
+                tax DECIMAL(10,2) NOT NULL,
+                total DECIMAL(10,2) NOT NULL,
+                shipping_address JSONB,
+                payment_method JSONB,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Orders table created');
+
+        // Create order_items table
+        await dbConnection.query(`
+            CREATE TABLE IF NOT EXISTS order_items (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+                product_id UUID REFERENCES products(id),
+                product_name VARCHAR(255) NOT NULL,
+                quantity INTEGER NOT NULL CHECK (quantity > 0),
+                price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Order items table created');
+
         // Insert categories
         const categoriesData = [
             ['Electronics', 'Electronic devices and gadgets'],

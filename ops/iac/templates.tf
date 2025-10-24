@@ -22,6 +22,7 @@ data "template_file" "container_definition" {
     secrets_manager_secret_name = "ecommerce/${var.environment}/database"
     secrets_manager_secret_arn  = module.rds.secrets_manager_secret_arn
     log_group                   = "/ecs/${var.ecs_name}"
+    xray_tracing_name           = var.ecs_name
   }
 }
 
@@ -44,5 +45,6 @@ data "template_file" "container_definition_standby" {
     secrets_manager_secret_name = "ecommerce/${var.environment}/database-standby"
     secrets_manager_secret_arn  = module.rds_standby.secrets_manager_secret_arn
     log_group                   = "/ecs/${var.ecs_name}-standby"
+    xray_tracing_name           = "${var.ecs_name}-standby"
   }
 }

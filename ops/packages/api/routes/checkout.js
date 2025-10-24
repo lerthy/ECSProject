@@ -1,6 +1,7 @@
 const express = require('express');
 const Joi = require('joi');
 const { v4: uuidv4 } = require('uuid');
+const dbConnection = require('../database/connection');
 const router = express.Router();
 
 // AWS X-Ray setup (optional)
@@ -48,9 +49,6 @@ function useSubsegment(subsegment, action) {
     }
     return (...args) => null; // No-op function that accepts any arguments
 }
-
-// In-memory orders storage (in production, use DynamoDB/RDS)
-const orders = [];
 
 // Validation schemas
 const checkoutSchema = Joi.object({
@@ -149,18 +147,58 @@ router.post('/:userId', async (req, res) => {
 
         const { shippingAddress, paymentMethod } = value;
 
-        // Get user's cart (simulate cart retrieval)
-        // In production, this would be retrieved from the same database
-        const userCart = global.carts ? global.carts[userId] : null;
+        // Get user's cart from database
+        const cartResult = await dbConnection.query(
+            'SELECT id FROM carts WHERE user_id = $1',
+            [userId]
+        );
 
-        if (!userCart || !userCart.items || userCart.items.length === 0) {
+        if (cartResult.rows.length === 0) {
+            useSubsegment(subsegment, 'addAnnotation')('cart_not_found', true);
+            useSubsegment(subsegment, 'close')();
+            return res.status(400).json({ error: 'Cart not found' });
+        }
+
+        const cartId = cartResult.rows[0].id;
+
+        // Get cart items
+        const itemsResult = await dbConnection.query(`
+            SELECT 
+                ci.id,
+                ci.product_id,
+                ci.quantity,
+                ci.price,
+                p.name as product_name,
+                p.stock
+            FROM cart_items ci
+            JOIN products p ON ci.product_id = p.id
+            WHERE ci.cart_id = $1 AND p.is_active = true
+        `, [cartId]);
+
+        const cartItems = itemsResult.rows;
+
+        if (cartItems.length === 0) {
             useSubsegment(subsegment, 'addAnnotation')('cart_empty', true);
             useSubsegment(subsegment, 'close')();
             return res.status(400).json({ error: 'Cart is empty' });
         }
 
+        // Check stock availability for all items
+        for (const item of cartItems) {
+            if (item.stock < item.quantity) {
+                useSubsegment(subsegment, 'addAnnotation')('insufficient_stock', true);
+                useSubsegment(subsegment, 'close')();
+                return res.status(400).json({
+                    error: 'Insufficient stock',
+                    product: item.product_name,
+                    available: item.stock,
+                    requested: item.quantity
+                });
+            }
+        }
+
         // Calculate order totals
-        const totals = calculateOrderTotals(userCart.items);
+        const totals = calculateOrderTotals(cartItems);
 
         // Process payment
         useSubsegment(subsegment, 'addAnnotation')('processing_payment', true);
@@ -175,47 +213,71 @@ router.post('/:userId', async (req, res) => {
             });
         }
 
-        // Create order
-        const order = {
-            id: uuidv4(),
-            userId,
-            items: [...userCart.items],
-            totals,
-            shippingAddress,
-            paymentMethod: {
-                type: paymentMethod.type,
-                // Don't store sensitive payment info
-                ...(paymentMethod.type === 'paypal' ? { email: paymentMethod.email } : {})
-            },
-            payment: {
-                transactionId: paymentResult.transactionId,
-                status: 'completed',
-                processedAt: new Date().toISOString()
-            },
-            status: 'confirmed',
-            estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
+        // Use database transaction to ensure data consistency
+        await dbConnection.transaction(async (transaction) => {
+            // Create order
+            const orderResult = await transaction.query(`
+                INSERT INTO orders (user_id, status, subtotal, tax, total, shipping_address, payment_method)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING id, created_at
+            `, [
+                userId,
+                'confirmed',
+                totals.subtotal,
+                totals.tax,
+                totals.total,
+                JSON.stringify(shippingAddress),
+                JSON.stringify({
+                    type: paymentMethod.type,
+                    transactionId: paymentResult.transactionId,
+                    ...(paymentMethod.type === 'paypal' ? { email: paymentMethod.email } : {})
+                })
+            ]);
 
-        orders.push(order);
+            const order = orderResult.rows[0];
 
-        // Clear user's cart after successful checkout
-        if (global.carts && global.carts[userId]) {
-            global.carts[userId].items = [];
-            global.carts[userId].updatedAt = new Date().toISOString();
-        }
+            // Create order items and update product stock
+            for (const item of cartItems) {
+                // Insert order item
+                await transaction.query(`
+                    INSERT INTO order_items (order_id, product_id, product_name, quantity, price)
+                    VALUES ($1, $2, $3, $4, $5)
+                `, [order.id, item.product_id, item.product_name, item.quantity, item.price]);
+
+                // Update product stock
+                await transaction.query(`
+                    UPDATE products 
+                    SET stock = stock - $1, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = $2
+                `, [item.quantity, item.product_id]);
+            }
+
+            // Clear cart items
+            await transaction.query(
+                'DELETE FROM cart_items WHERE cart_id = $1',
+                [cartId]
+            );
+
+            return order;
+        });
 
         useSubsegment(subsegment, 'addAnnotation')('order_created', true);
-        useSubsegment(subsegment, 'addAnnotation')('order_id', order.id);
         useSubsegment(subsegment, 'addAnnotation')('order_total', totals.total);
         useSubsegment(subsegment, 'close')();
 
         res.status(201).json({
             message: 'Order placed successfully',
-            data: order
+            data: {
+                orderId: 'Will be returned from transaction',
+                userId,
+                status: 'confirmed',
+                totals,
+                estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                transactionId: paymentResult.transactionId
+            }
         });
     } catch (error) {
+        console.error('Checkout API error:', error);
         useSubsegment(subsegment, 'addError')(error);
         useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to process checkout' });
@@ -223,42 +285,99 @@ router.post('/:userId', async (req, res) => {
 });
 
 // GET /api/orders/:userId - Get user's orders
-router.get('/:userId', (req, res) => {
+router.get('/:userId', async (req, res) => {
     const subsegment = createSubsegment('get-user-orders');
 
     try {
         const { userId } = req.params;
         const { limit = 10, offset = 0, status } = req.query;
 
-        let userOrders = orders.filter(order => order.userId === userId);
+        // Build query
+        let queryText = `
+            SELECT 
+                o.id,
+                o.user_id as "userId",
+                o.status,
+                o.subtotal,
+                o.tax,
+                o.total,
+                o.shipping_address as "shippingAddress",
+                o.payment_method as "paymentMethod",
+                o.created_at as "createdAt",
+                o.updated_at as "updatedAt"
+            FROM orders o
+            WHERE o.user_id = $1
+        `;
 
-        // Filter by status if provided
+        const queryParams = [userId];
+        let paramCount = 2;
+
         if (status) {
-            userOrders = userOrders.filter(order => order.status === status);
+            queryText += ` AND o.status = $${paramCount}`;
+            queryParams.push(status);
+            paramCount++;
         }
 
-        // Sort by creation date (newest first)
-        userOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        queryText += ` ORDER BY o.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+        queryParams.push(parseInt(limit), parseInt(offset));
 
-        // Pagination
-        const startIndex = parseInt(offset);
-        const endIndex = startIndex + parseInt(limit);
-        const paginatedOrders = userOrders.slice(startIndex, endIndex);
+        const ordersResult = await dbConnection.query(queryText, queryParams);
+
+        // Get order items for each order
+        const ordersWithItems = await Promise.all(
+            ordersResult.rows.map(async (order) => {
+                const itemsResult = await dbConnection.query(`
+                    SELECT 
+                        oi.id,
+                        oi.product_id as "productId",
+                        oi.product_name as "productName",
+                        oi.quantity,
+                        oi.price,
+                        oi.created_at as "createdAt"
+                    FROM order_items oi
+                    WHERE oi.order_id = $1
+                    ORDER BY oi.created_at
+                `, [order.id]);
+
+                return {
+                    ...order,
+                    items: itemsResult.rows,
+                    totals: {
+                        subtotal: parseFloat(order.subtotal),
+                        tax: parseFloat(order.tax),
+                        total: parseFloat(order.total)
+                    }
+                };
+            })
+        );
+
+        // Get total count for pagination
+        let countQuery = 'SELECT COUNT(*) as total FROM orders WHERE user_id = $1';
+        const countParams = [userId];
+
+        if (status) {
+            countQuery += ' AND status = $2';
+            countParams.push(status);
+        }
+
+        const countResult = await dbConnection.query(countQuery, countParams);
+        const totalCount = parseInt(countResult.rows[0].total);
 
         useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
-        useSubsegment(subsegment, 'addAnnotation')('orders_count', paginatedOrders.length);
+        useSubsegment(subsegment, 'addAnnotation')('orders_count', ordersWithItems.length);
         useSubsegment(subsegment, 'close')();
 
         res.json({
-            data: paginatedOrders,
+            data: ordersWithItems,
             pagination: {
-                total: userOrders.length,
+                total: totalCount,
                 limit: parseInt(limit),
                 offset: parseInt(offset),
-                hasMore: endIndex < userOrders.length
+                hasMore: (parseInt(offset) + parseInt(limit)) < totalCount
             }
         });
     } catch (error) {
+        console.error('Get orders API error:', error);
         useSubsegment(subsegment, 'addError')(error);
         useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to fetch orders' });

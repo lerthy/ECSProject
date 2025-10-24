@@ -7,7 +7,72 @@ resource "aws_cloudwatch_log_group" "ecs" {
 
 resource "aws_cloudwatch_dashboard" "main" {
   dashboard_name = "${var.name}-dashboard"
-  dashboard_body = var.dashboard_body
+  dashboard_body = jsonencode({
+    widgets = [
+      {
+        type   = "metric"
+        x      = 0
+        y      = 0
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["AWS/ECS", "CPUUtilization", "ServiceName", var.ecs_service_name, "ClusterName", var.ecs_cluster_name],
+            [".", "MemoryUtilization", ".", ".", ".", "."]
+          ]
+          period = 300
+          stat   = "Average"
+          region = "us-east-1"
+          title  = "ECS Service Metrics"
+          yAxis = {
+            left = {
+              min = 0
+              max = 100
+            }
+          }
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 6
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", var.alb_arn_suffix],
+            [".", "RequestCount", ".", "."]
+          ]
+          period = 300
+          stat   = "Average"
+          region = "us-east-1"
+          title  = "ALB Metrics"
+          yAxis = {
+            left = {
+              min = 0
+            }
+          }
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 12
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["AWS/CloudFront", "CacheHitRate", "DistributionId", var.cloudfront_distribution_id],
+            [".", "Requests", ".", "."]
+          ]
+          period = 300
+          stat   = "Average"
+          region = "us-east-1"
+          title  = "CloudFront Metrics"
+        }
+      }
+    ]
+  })
 }
 
 resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
@@ -22,6 +87,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
   alarm_description   = "ECS CPU > ${var.ecs_cpu_threshold}%"
   dimensions = {
     ClusterName = var.ecs_cluster_name
+    ServiceName = var.ecs_service_name
   }
   alarm_actions = [var.sns_topic_arn]
   ok_actions    = [var.sns_topic_arn]
@@ -38,7 +104,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_latency" {
   statistic           = "Average"
   threshold           = 1.0
   dimensions = {
-    LoadBalancer = var.alb_name
+    LoadBalancer = var.alb_arn_suffix
   }
   alarm_description = "ALB latency too high"
   alarm_actions     = [var.sns_topic_arn]

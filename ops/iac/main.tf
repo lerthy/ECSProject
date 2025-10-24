@@ -188,6 +188,8 @@ module "cloudwatch" {
   dashboard_body             = var.dashboard_body
   ecs_cpu_threshold          = var.ecs_cpu_threshold
   ecs_cluster_name           = module.ecs.cluster_name
+  ecs_service_name           = module.ecs.service_name
+  alb_arn_suffix             = module.alb.alb_arn_suffix
   sns_topic_arn              = module.sns.sns_topic_arn
   alb_name                   = var.alb_name
   environment                = var.environment

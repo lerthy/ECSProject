@@ -48,6 +48,16 @@ variable "ecs_cluster_name" {
   type        = string
 }
 
+variable "ecs_service_name" {
+  description = "ECS service name for alarm dimension"
+  type        = string
+}
+
+variable "alb_arn_suffix" {
+  description = "ALB ARN suffix for CloudWatch metrics"
+  type        = string
+}
+
 variable "sns_topic_arn" {
   description = "SNS topic ARN for alarm notifications"
   type        = string

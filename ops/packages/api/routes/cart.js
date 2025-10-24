@@ -1,6 +1,7 @@
 const express = require('express');
 const Joi = require('joi');
 const { v4: uuidv4 } = require('uuid');
+const dbConnection = require('../database/connection');
 const router = express.Router();
 
 // AWS X-Ray setup (optional)
@@ -49,11 +50,48 @@ function useSubsegment(subsegment, action) {
     return (...args) => null; // No-op function that accepts any arguments
 }
 
-// In-memory cart storage (in production, use DynamoDB/Redis)
-const carts = {};
+// Helper function to get or create cart for user
+async function getOrCreateCart(userId) {
+    // Check if cart exists
+    let result = await dbConnection.query(
+        'SELECT id FROM carts WHERE user_id = $1',
+        [userId]
+    );
 
-// Make carts accessible globally for checkout module
-global.carts = carts;
+    if (result.rows.length === 0) {
+        // Create new cart
+        result = await dbConnection.query(
+            'INSERT INTO carts (user_id) VALUES ($1) RETURNING id',
+            [userId]
+        );
+    }
+
+    return result.rows[0].id;
+}
+
+// Helper function to calculate cart totals
+async function calculateCartTotals(cartId) {
+    const result = await dbConnection.query(`
+        SELECT 
+            COALESCE(SUM(ci.price * ci.quantity), 0) as subtotal,
+            COUNT(ci.id) as item_count
+        FROM cart_items ci
+        WHERE ci.cart_id = $1
+    `, [cartId]);
+
+    const subtotal = parseFloat(result.rows[0].subtotal || 0);
+    const tax = subtotal * 0.08; // 8% tax
+    const shipping = subtotal > 50 ? 0 : 9.99; // Free shipping over $50
+    const total = subtotal + tax + shipping;
+
+    return {
+        subtotal: Math.round(subtotal * 100) / 100,
+        tax: Math.round(tax * 100) / 100,
+        shipping: Math.round(shipping * 100) / 100,
+        total: Math.round(total * 100) / 100,
+        itemCount: parseInt(result.rows[0].item_count || 0)
+    };
+}
 
 // Validation schemas
 const addItemSchema = Joi.object({
@@ -66,49 +104,51 @@ const updateItemSchema = Joi.object({
     quantity: Joi.number().integer().min(1).required()
 });
 
-// Helper function to calculate cart totals
-function calculateCartTotals(cart) {
-    const subtotal = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const tax = subtotal * 0.08; // 8% tax
-    const total = subtotal + tax;
-
-    return {
-        subtotal: Math.round(subtotal * 100) / 100,
-        tax: Math.round(tax * 100) / 100,
-        total: Math.round(total * 100) / 100
-    };
-}
-
 // GET /api/cart/:userId - Get user's cart
-router.get('/:userId', (req, res) => {
+router.get('/:userId', async (req, res) => {
     const subsegment = createSubsegment('get-cart');
 
     try {
         const { userId } = req.params;
 
-        if (!carts[userId]) {
-            carts[userId] = {
-                userId,
-                items: [],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-        }
+        // Get or create cart
+        const cartId = await getOrCreateCart(userId);
 
-        const cart = carts[userId];
-        const totals = calculateCartTotals(cart);
+        // Get cart items with product details
+        const itemsResult = await dbConnection.query(`
+            SELECT 
+                ci.id,
+                ci.product_id as "productId",
+                ci.quantity,
+                ci.price,
+                p.name as "productName",
+                p.image_url as "imageUrl",
+                ci.created_at as "addedAt",
+                ci.updated_at as "updatedAt"
+            FROM cart_items ci
+            LEFT JOIN products p ON ci.product_id = p.id
+            WHERE ci.cart_id = $1
+            ORDER BY ci.created_at DESC
+        `, [cartId]);
+
+        const items = itemsResult.rows;
+        const totals = await calculateCartTotals(cartId);
 
         useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
-        useSubsegment(subsegment, 'addAnnotation')('cart_items_count', cart.items.length);
+        useSubsegment(subsegment, 'addAnnotation')('cart_items_count', items.length);
         useSubsegment(subsegment, 'close')();
 
         res.json({
             data: {
-                ...cart,
-                ...totals
+                userId,
+                items,
+                ...totals,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             }
         });
     } catch (error) {
+        console.error('Get cart API error:', error);
         useSubsegment(subsegment, 'addError')(error);
         useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to fetch cart' });
@@ -116,7 +156,7 @@ router.get('/:userId', (req, res) => {
 });
 
 // POST /api/cart/:userId/items - Add item to cart
-router.post('/:userId/items', (req, res) => {
+router.post('/:userId/items', async (req, res) => {
     const subsegment = createSubsegment('add-cart-item');
 
     try {
@@ -124,8 +164,8 @@ router.post('/:userId/items', (req, res) => {
         const { error, value } = addItemSchema.validate(req.body);
 
         if (error) {
-            subsegment.addAnnotation('validation_error', true);
-            subsegment.close();
+            useSubsegment(subsegment, 'addAnnotation')('validation_error', true);
+            useSubsegment(subsegment, 'close')();
             return res.status(400).json({
                 error: 'Validation failed',
                 details: error.details.map(d => d.message)
@@ -134,40 +174,76 @@ router.post('/:userId/items', (req, res) => {
 
         const { productId, quantity, price } = value;
 
-        // Initialize cart if doesn't exist
-        if (!carts[userId]) {
-            carts[userId] = {
-                userId,
-                items: [],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
+        // Verify product exists and is active
+        const productResult = await dbConnection.query(
+            'SELECT id, name, stock FROM products WHERE id = $1 AND is_active = true',
+            [productId]
+        );
+
+        if (productResult.rows.length === 0) {
+            useSubsegment(subsegment, 'addAnnotation')('product_found', false);
+            useSubsegment(subsegment, 'close')();
+            return res.status(404).json({ error: 'Product not found or inactive' });
         }
 
-        const cart = carts[userId];
+        const product = productResult.rows[0];
+
+        // Check if enough stock is available
+        if (product.stock < quantity) {
+            useSubsegment(subsegment, 'addAnnotation')('insufficient_stock', true);
+            useSubsegment(subsegment, 'close')();
+            return res.status(400).json({
+                error: 'Insufficient stock',
+                available: product.stock,
+                requested: quantity
+            });
+        }
+
+        // Get or create cart
+        const cartId = await getOrCreateCart(userId);
 
         // Check if item already exists in cart
-        const existingItemIndex = cart.items.findIndex(item => item.productId === productId);
+        const existingItemResult = await dbConnection.query(
+            'SELECT id, quantity FROM cart_items WHERE cart_id = $1 AND product_id = $2',
+            [cartId, productId]
+        );
 
-        if (existingItemIndex !== -1) {
-            // Update quantity if item exists
-            cart.items[existingItemIndex].quantity += quantity;
-            cart.items[existingItemIndex].updatedAt = new Date().toISOString();
+        if (existingItemResult.rows.length > 0) {
+            // Update existing item quantity
+            const existingItem = existingItemResult.rows[0];
+            const newQuantity = existingItem.quantity + quantity;
+
+            await dbConnection.query(
+                'UPDATE cart_items SET quantity = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+                [newQuantity, existingItem.id]
+            );
         } else {
             // Add new item to cart
-            const newItem = {
-                id: uuidv4(),
-                productId,
-                quantity,
-                price,
-                addedAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-            cart.items.push(newItem);
+            await dbConnection.query(
+                'INSERT INTO cart_items (cart_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)',
+                [cartId, productId, quantity, price]
+            );
         }
 
-        cart.updatedAt = new Date().toISOString();
-        const totals = calculateCartTotals(cart);
+        // Get updated cart with items
+        const itemsResult = await dbConnection.query(`
+            SELECT 
+                ci.id,
+                ci.product_id as "productId",
+                ci.quantity,
+                ci.price,
+                p.name as "productName",
+                p.image_url as "imageUrl",
+                ci.created_at as "addedAt",
+                ci.updated_at as "updatedAt"
+            FROM cart_items ci
+            LEFT JOIN products p ON ci.product_id = p.id
+            WHERE ci.cart_id = $1
+            ORDER BY ci.created_at DESC
+        `, [cartId]);
+
+        const items = itemsResult.rows;
+        const totals = await calculateCartTotals(cartId);
 
         useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
         useSubsegment(subsegment, 'addAnnotation')('product_id', productId);
@@ -177,11 +253,13 @@ router.post('/:userId/items', (req, res) => {
         res.status(201).json({
             message: 'Item added to cart successfully',
             data: {
-                ...cart,
+                userId,
+                items,
                 ...totals
             }
         });
     } catch (error) {
+        console.error('Add cart item API error:', error);
         useSubsegment(subsegment, 'addError')(error);
         useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to add item to cart' });
@@ -189,7 +267,7 @@ router.post('/:userId/items', (req, res) => {
 });
 
 // PUT /api/cart/:userId/items/:itemId - Update cart item quantity
-router.put('/:userId/items/:itemId', (req, res) => {
+router.put('/:userId/items/:itemId', async (req, res) => {
     const subsegment = createSubsegment('update-cart-item');
 
     try {
@@ -207,26 +285,83 @@ router.put('/:userId/items/:itemId', (req, res) => {
 
         const { quantity } = value;
 
-        if (!carts[userId]) {
+        // Get cart ID
+        const cartResult = await dbConnection.query(
+            'SELECT id FROM carts WHERE user_id = $1',
+            [userId]
+        );
+
+        if (cartResult.rows.length === 0) {
             useSubsegment(subsegment, 'addAnnotation')('cart_found', false);
             useSubsegment(subsegment, 'close')();
             return res.status(404).json({ error: 'Cart not found' });
         }
 
-        const cart = carts[userId];
-        const itemIndex = cart.items.findIndex(item => item.id === itemId);
+        const cartId = cartResult.rows[0].id;
 
-        if (itemIndex === -1) {
+        // Check if cart item exists
+        const itemResult = await dbConnection.query(
+            'SELECT id, product_id FROM cart_items WHERE id = $1 AND cart_id = $2',
+            [itemId, cartId]
+        );
+
+        if (itemResult.rows.length === 0) {
             useSubsegment(subsegment, 'addAnnotation')('item_found', false);
             useSubsegment(subsegment, 'close')();
             return res.status(404).json({ error: 'Item not found in cart' });
         }
 
-        cart.items[itemIndex].quantity = quantity;
-        cart.items[itemIndex].updatedAt = new Date().toISOString();
-        cart.updatedAt = new Date().toISOString();
+        const item = itemResult.rows[0];
 
-        const totals = calculateCartTotals(cart);
+        // Verify product has enough stock
+        const productResult = await dbConnection.query(
+            'SELECT stock FROM products WHERE id = $1 AND is_active = true',
+            [item.product_id]
+        );
+
+        if (productResult.rows.length === 0) {
+            useSubsegment(subsegment, 'addAnnotation')('product_found', false);
+            useSubsegment(subsegment, 'close')();
+            return res.status(404).json({ error: 'Product not found or inactive' });
+        }
+
+        const product = productResult.rows[0];
+
+        if (product.stock < quantity) {
+            useSubsegment(subsegment, 'addAnnotation')('insufficient_stock', true);
+            useSubsegment(subsegment, 'close')();
+            return res.status(400).json({
+                error: 'Insufficient stock',
+                available: product.stock,
+                requested: quantity
+            });
+        }
+
+        // Update item quantity
+        await dbConnection.query(
+            'UPDATE cart_items SET quantity = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [quantity, itemId]
+        );
+
+        // Get updated cart with items
+        const itemsResult = await dbConnection.query(`
+            SELECT 
+                ci.id,
+                ci.product_id as "productId",
+                ci.quantity,
+                ci.price,
+                p.name as "productName",
+                p.image_url as "imageUrl",
+                ci.created_at as "addedAt",
+                ci.updated_at as "updatedAt"
+            FROM cart_items ci
+            LEFT JOIN products p ON ci.product_id = p.id
+            WHERE ci.cart_id = $1
+            ORDER BY ci.created_at DESC
+        `, [cartId]);
+
+        const items = itemsResult.rows;
+        const totals = await calculateCartTotals(cartId);
 
         useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
         useSubsegment(subsegment, 'addAnnotation')('item_id', itemId);
@@ -236,11 +371,13 @@ router.put('/:userId/items/:itemId', (req, res) => {
         res.json({
             message: 'Cart item updated successfully',
             data: {
-                ...cart,
+                userId,
+                items,
                 ...totals
             }
         });
     } catch (error) {
+        console.error('Update cart item API error:', error);
         useSubsegment(subsegment, 'addError')(error);
         useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to update cart item' });
@@ -248,31 +385,57 @@ router.put('/:userId/items/:itemId', (req, res) => {
 });
 
 // DELETE /api/cart/:userId/items/:itemId - Remove item from cart
-router.delete('/:userId/items/:itemId', (req, res) => {
+router.delete('/:userId/items/:itemId', async (req, res) => {
     const subsegment = createSubsegment('remove-cart-item');
 
     try {
         const { userId, itemId } = req.params;
 
-        if (!carts[userId]) {
+        // Get cart ID
+        const cartResult = await dbConnection.query(
+            'SELECT id FROM carts WHERE user_id = $1',
+            [userId]
+        );
+
+        if (cartResult.rows.length === 0) {
             useSubsegment(subsegment, 'addAnnotation')('cart_found', false);
             useSubsegment(subsegment, 'close')();
             return res.status(404).json({ error: 'Cart not found' });
         }
 
-        const cart = carts[userId];
-        const itemIndex = cart.items.findIndex(item => item.id === itemId);
+        const cartId = cartResult.rows[0].id;
 
-        if (itemIndex === -1) {
+        // Check if cart item exists and delete it
+        const deleteResult = await dbConnection.query(
+            'DELETE FROM cart_items WHERE id = $1 AND cart_id = $2',
+            [itemId, cartId]
+        );
+
+        if (deleteResult.rowCount === 0) {
             useSubsegment(subsegment, 'addAnnotation')('item_found', false);
             useSubsegment(subsegment, 'close')();
             return res.status(404).json({ error: 'Item not found in cart' });
         }
 
-        cart.items.splice(itemIndex, 1);
-        cart.updatedAt = new Date().toISOString();
+        // Get updated cart with items
+        const itemsResult = await dbConnection.query(`
+            SELECT 
+                ci.id,
+                ci.product_id as "productId",
+                ci.quantity,
+                ci.price,
+                p.name as "productName",
+                p.image_url as "imageUrl",
+                ci.created_at as "addedAt",
+                ci.updated_at as "updatedAt"
+            FROM cart_items ci
+            LEFT JOIN products p ON ci.product_id = p.id
+            WHERE ci.cart_id = $1
+            ORDER BY ci.created_at DESC
+        `, [cartId]);
 
-        const totals = calculateCartTotals(cart);
+        const items = itemsResult.rows;
+        const totals = await calculateCartTotals(cartId);
 
         useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
         useSubsegment(subsegment, 'addAnnotation')('item_id', itemId);
@@ -282,11 +445,13 @@ router.delete('/:userId/items/:itemId', (req, res) => {
         res.json({
             message: 'Item removed from cart successfully',
             data: {
-                ...cart,
+                userId,
+                items,
                 ...totals
             }
         });
     } catch (error) {
+        console.error('Remove cart item API error:', error);
         useSubsegment(subsegment, 'addError')(error);
         useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to remove cart item' });
@@ -294,22 +459,39 @@ router.delete('/:userId/items/:itemId', (req, res) => {
 });
 
 // DELETE /api/cart/:userId - Clear entire cart
-router.delete('/:userId', (req, res) => {
+router.delete('/:userId', async (req, res) => {
     const subsegment = createSubsegment('clear-cart');
 
     try {
         const { userId } = req.params;
 
-        if (!carts[userId]) {
+        // Get cart ID
+        const cartResult = await dbConnection.query(
+            'SELECT id FROM carts WHERE user_id = $1',
+            [userId]
+        );
+
+        if (cartResult.rows.length === 0) {
             useSubsegment(subsegment, 'addAnnotation')('cart_found', false);
             useSubsegment(subsegment, 'close')();
             return res.status(404).json({ error: 'Cart not found' });
         }
 
-        carts[userId].items = [];
-        carts[userId].updatedAt = new Date().toISOString();
+        const cartId = cartResult.rows[0].id;
 
-        const totals = calculateCartTotals(carts[userId]);
+        // Clear all items from cart
+        await dbConnection.query(
+            'DELETE FROM cart_items WHERE cart_id = $1',
+            [cartId]
+        );
+
+        // Update cart timestamp
+        await dbConnection.query(
+            'UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+            [cartId]
+        );
+
+        const totals = await calculateCartTotals(cartId);
 
         useSubsegment(subsegment, 'addAnnotation')('user_id', userId);
         useSubsegment(subsegment, 'addAnnotation')('cart_cleared', true);
@@ -318,11 +500,13 @@ router.delete('/:userId', (req, res) => {
         res.json({
             message: 'Cart cleared successfully',
             data: {
-                ...carts[userId],
+                userId,
+                items: [],
                 ...totals
             }
         });
     } catch (error) {
+        console.error('Clear cart API error:', error);
         useSubsegment(subsegment, 'addError')(error);
         useSubsegment(subsegment, 'close')();
         res.status(500).json({ error: 'Failed to clear cart' });
@@ -330,4 +514,3 @@ router.delete('/:userId', (req, res) => {
 });
 
 module.exports = router;
-module.exports.carts = carts;

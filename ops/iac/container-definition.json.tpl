@@ -22,7 +22,7 @@
             { "name": "AWS_REGION", "value": "${aws_region}" },
             { "name": "DB_SECRETS_ARN", "value": "${secrets_manager_secret_arn}" },
             { "name": "_X_AMZN_TRACE_ID", "value": "" },
-            { "name": "AWS_XRAY_TRACING_NAME", "value": "ecommerce-api-dev" },
+            { "name": "AWS_XRAY_TRACING_NAME", "value": "${xray_tracing_name}" },
             { "name": "AWS_XRAY_DAEMON_ADDRESS", "value": "127.0.0.1:2000" }
         ],
         "logConfiguration": {
